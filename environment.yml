@@ -1,0 +1,12 @@
+name: roguelike
+channels:
+  - defaults
+dependencies:
+  - isort
+  - mypy
+  - pytest
+  - pytest-cov
+  - python=3.7.3
+  - pip:
+    - black
+    - tcod
