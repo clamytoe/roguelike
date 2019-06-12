@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from tcod.color import Color
+
 
 @dataclass
 class Entity:
@@ -10,7 +12,7 @@ class Entity:
     x: int
     y: int
     char: str
-    color: int
+    color: Color
 
     def move(self, dx: int, dy: int) -> None:
         """
