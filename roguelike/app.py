@@ -6,36 +6,61 @@ Roguelike Game
 """
 from os import path
 
-import tcod as libtcod
+import tcod
+import tcod.event
+
+from .input_handlers import handle_keys
 
 TITLE = "roguelike tutorial"
 FONT_IMAGE = "arial10x10.png"
 HERE = path.abspath(path.dirname(__file__))
 CUSTOM_FONT = f"{HERE}/img/{FONT_IMAGE}"
 FULL_SCREEN = False
-MAIN_SCREEN = 0
 PLAYER_CHAR = "@"
-PLAYER_COLOR = libtcod.white
-PLAYER_BG = libtcod.BKGND_NONE
+PLAYER_COLOR = tcod.white
+PLAYER_BG = tcod.BKGND_NONE
 SCREEN_WIDTH = 80
 SCREEN_HEIGHT = 50
 
 
 def main():
-    libtcod.console_set_custom_font(
-        CUSTOM_FONT, libtcod.FONT_TYPE_GRAYSCALE | libtcod.FONT_LAYOUT_TCOD
+    player_x = int(SCREEN_WIDTH / 2)
+    player_y = int(SCREEN_HEIGHT / 2)
+
+    tcod.console_set_custom_font(
+        CUSTOM_FONT, tcod.FONT_TYPE_GRAYSCALE | tcod.FONT_LAYOUT_TCOD
     )
-    libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, TITLE, FULL_SCREEN)
 
-    while not libtcod.console_is_window_closed():
-        libtcod.console_set_default_foreground(MAIN_SCREEN, PLAYER_COLOR)
-        libtcod.console_put_char(MAIN_SCREEN, 1, 1, PLAYER_CHAR, PLAYER_BG)
-        libtcod.console_flush()
+    with tcod.console_init_root(
+        SCREEN_WIDTH, SCREEN_HEIGHT, TITLE, FULL_SCREEN, tcod.RENDERER_SDL2, "F", True
+    ) as con:
+        key = tcod.Key()
+        mouse = tcod.Mouse()
 
-        key = libtcod.console_check_for_keypress()
+        while not tcod.console_is_window_closed():
+            tcod.sys_check_for_event(tcod.EVENT_KEY_PRESS, key, mouse)
+            con.default_fg = PLAYER_COLOR
+            tcod.console_put_char(
+                con, player_x, player_y, PLAYER_CHAR, PLAYER_BG
+            )
+            tcod.console_flush()
 
-        if key.vk == libtcod.KEY_ESCAPE:
-            return True
+            action = handle_keys(key)
+
+            move = action.get("move")
+            exit = action.get("exit")
+            fullscreen = action.get("fullscreen")
+
+            if move:
+                dx, dy = move
+                player_x += dx
+                player_y += dy
+
+            if exit:
+                return True
+
+            if fullscreen:
+                tcod.console_set_fullscreen(not tcod.console_is_fullscreen())
 
 
 if __name__ == "__main__":
