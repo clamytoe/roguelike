@@ -10,6 +10,8 @@
 
 NOTE: This app was generated with [Cookiecutter](https://github.com/audreyr/cookiecutter) along with [@clamytoe's](https://github.com/clamytoe) [toepack](https://github.com/clamytoe/toepack) project template.
 
+This repo will be used to track my progress as I code the Roguelike Game at: [rogueliketutorials.com](http://rogueliketutorials.com/tutorials/tcod/)
+
 ### Initial setup
 ```zsh
 cd Projects
@@ -58,6 +60,8 @@ Distributed under the terms of the [MIT](https://opensource.org/licenses/MIT) li
 If you encounter any problems, please [file an issue](https://github.com/clamytoe/toepack/issues) along with a detailed description.
 
 ## Changelog
+* **v0.1.2** Completed part 2 of the tutorial.
+* **v0.1.1** Completed part 1 of the tutorial.
 * **v0.1.0** Initial commit.
 
 [python-version]:https://img.shields.io/badge/python-3.7.3-brightgreen.svg
