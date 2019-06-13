@@ -24,6 +24,9 @@ MAP_WIDTH = 80
 MAP_HEIGHT = 45
 SCREEN_WIDTH = 80
 SCREEN_HEIGHT = 50
+ROOM_MAX_SIZE = 10
+ROOM_MIN_SIZE = 6
+MAX_ROOMS = 30
 COLORS = {"dark_wall": tcod.Color(0, 0, 100), "dark_ground": tcod.Color(50, 50, 150)}
 
 
@@ -42,7 +45,9 @@ def main():
         key = tcod.Key()
         mouse = tcod.Mouse()
         game_map = GameMap(MAP_WIDTH, MAP_HEIGHT)
-        game_map.make_map()
+        game_map.make_map(
+            MAX_ROOMS, ROOM_MIN_SIZE, ROOM_MAX_SIZE, MAP_WIDTH, MAP_HEIGHT, player
+        )
 
         while not tcod.console_is_window_closed():
             tcod.sys_check_for_event(tcod.EVENT_KEY_PRESS, key, mouse)
