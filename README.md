@@ -60,6 +60,7 @@ Distributed under the terms of the [MIT](https://opensource.org/licenses/MIT) li
 If you encounter any problems, please [file an issue](https://github.com/clamytoe/toepack/issues) along with a detailed description.
 
 ## Changelog
+* **v0.1.3** Completed part 3 of the tutorial.
 * **v0.1.2** Completed part 2 of the tutorial.
 * **v0.1.1** Completed part 1 of the tutorial.
 * **v0.1.0** Initial commit.
