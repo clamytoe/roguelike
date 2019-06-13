@@ -11,6 +11,7 @@ import tcod.event
 
 from .entity import Entity
 from .input_handlers import handle_keys
+from .map_objects.game_map import GameMap
 from .render_functions import clear_all, clear_entity, draw_entity, render_all
 
 TITLE = "roguelike tutorial"
@@ -19,8 +20,14 @@ HERE = path.abspath(path.dirname(__file__))
 CUSTOM_FONT = f"{HERE}/img/{FONT_IMAGE}"
 FULL_SCREEN = False
 PLAYER_BG = tcod.BKGND_NONE
+MAP_WIDTH = 80
+MAP_HEIGHT = 45
 SCREEN_WIDTH = 80
 SCREEN_HEIGHT = 50
+COLORS = {
+    "dark_wall": tcod.Color(0, 0, 100),
+    "dark_ground": tcod.Color(50, 50, 150),
+}
 
 
 def main():
@@ -37,10 +44,11 @@ def main():
     ) as con:
         key = tcod.Key()
         mouse = tcod.Mouse()
+        game_map = GameMap(MAP_WIDTH, MAP_HEIGHT)
 
         while not tcod.console_is_window_closed():
             tcod.sys_check_for_event(tcod.EVENT_KEY_PRESS, key, mouse)
-            render_all(con, entities, SCREEN_WIDTH, SCREEN_HEIGHT)
+            render_all(con, entities, game_map, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS)
 
             tcod.console_flush()
 
