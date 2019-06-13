@@ -28,7 +28,7 @@ COLORS = {"dark_wall": tcod.Color(0, 0, 100), "dark_ground": tcod.Color(50, 50, 
 
 
 def main():
-    npc = Entity(int(SCREEN_WIDTH / 2 - 5), int(SCREEN_HEIGHT / 2), "*", tcod.white)
+    npc = Entity(int(SCREEN_WIDTH / 2 - 5), int(SCREEN_HEIGHT / 2), "@", tcod.yellow)
     player = Entity(int(SCREEN_WIDTH / 2), int(SCREEN_HEIGHT / 2), "@", tcod.white)
     entities = [npc, player]
 
@@ -42,6 +42,7 @@ def main():
         key = tcod.Key()
         mouse = tcod.Mouse()
         game_map = GameMap(MAP_WIDTH, MAP_HEIGHT)
+        game_map.make_map()
 
         while not tcod.console_is_window_closed():
             tcod.sys_check_for_event(tcod.EVENT_KEY_PRESS, key, mouse)
