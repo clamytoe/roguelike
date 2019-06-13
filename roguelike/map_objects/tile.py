@@ -11,7 +11,7 @@ class Tile:
     """
 
     blocked: bool
-    block_sight: Union[bool, None]
+    block_sight: Union[bool, None] = None
 
     def __post_init__(self):
         self.block_sight = (
