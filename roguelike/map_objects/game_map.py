@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 from .tile import Tile
@@ -8,7 +8,10 @@ from .tile import Tile
 class GameMap:
     width: int
     height: int
-    tiles: List[Tile]
+    tiles: List[List[Tile]] = field(default_factory=list)
+
+    def __post_init__(self):
+        self.tiles = self.initialize_tiles()
 
     def initialize_tiles(self):
         tiles = [[Tile(False) for y in range(self.height)] for x in range(self.width)]
