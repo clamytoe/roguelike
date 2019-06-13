@@ -18,9 +18,13 @@ def render_all(con, entities, game_map, screen_width, screen_height, colors):
             wall = game_map.tiles[x][y].block_sight
 
             if wall:
-                tcod.console_set_char_background(con, x, y, colors.get("dark_wall"), tcod.BKGND_SET)
+                tcod.console_set_char_background(
+                    con, x, y, colors.get("dark_wall"), tcod.BKGND_SET
+                )
             else:
-                tcod.console_set_char_background(con, x, y, colors.get("dark_ground"), tcod.BKGND_SET)
+                tcod.console_set_char_background(
+                    con, x, y, colors.get("dark_ground"), tcod.BKGND_SET
+                )
 
     # Draw all entities in the list
     for entity in entities:
@@ -58,4 +62,4 @@ def clear_entity(con, entity):
     :param entity: Entity object
     :return: None
     """
-    tcod.console_put_char(con, entity.x, entity.y, ' ', tcod.BKGND_NONE)
+    tcod.console_put_char(con, entity.x, entity.y, " ", tcod.BKGND_NONE)

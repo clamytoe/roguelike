@@ -3,9 +3,10 @@ setup.py
 
 Setup for installing the package.
 """
-from setuptools import setup, find_packages
-from os import path
 from io import open
+from os import path
+
+from setuptools import find_packages, setup
 
 import roguelike
 
@@ -47,13 +48,9 @@ setup(
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
     install_requires=["pytest"],
     license="MIT",
-    entry_points={
-        "console_scripts": [
-            "roguelike=roguelike.app:main"
-        ],
-    },
+    entry_points={"console_scripts": ["roguelike=roguelike.app:main"]},
     project_urls={
-        'Bug Reports': 'https://github.com/clamytoe/roguelike/issues',
-        'Source': 'https://github.com/clamytoe/roguelike/',
+        "Bug Reports": "https://github.com/clamytoe/roguelike/issues",
+        "Source": "https://github.com/clamytoe/roguelike/",
     },
 )

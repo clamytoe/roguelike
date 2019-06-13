@@ -14,4 +14,3 @@ def handle_keys(key):
         return {"fullscreen": True}
     else:
         return KEYS.get(key.vk, {})
-
