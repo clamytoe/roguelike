@@ -24,10 +24,7 @@ MAP_WIDTH = 80
 MAP_HEIGHT = 45
 SCREEN_WIDTH = 80
 SCREEN_HEIGHT = 50
-COLORS = {
-    "dark_wall": tcod.Color(0, 0, 100),
-    "dark_ground": tcod.Color(50, 50, 150),
-}
+COLORS = {"dark_wall": tcod.Color(0, 0, 100), "dark_ground": tcod.Color(50, 50, 150)}
 
 
 def main():
@@ -62,7 +59,8 @@ def main():
 
             if move:
                 dx, dy = move
-                player.move(dx, dy)
+                if not game_map.is_blocked(player.x + dx, player.y + dy):
+                    player.move(dx, dy)
 
             if exit:
                 return True
