@@ -12,6 +12,7 @@ class Tile:
 
     blocked: bool
     block_sight: Union[bool, None] = None
+    explored: bool = False
 
     def __post_init__(self):
         self.block_sight = (
