@@ -10,6 +10,8 @@
 
 NOTE: This app was generated with [Cookiecutter](https://github.com/audreyr/cookiecutter) along with [@clamytoe's](https://github.com/clamytoe) [toepack](https://github.com/clamytoe/toepack) project template.
 
+![logo](roguelike/resources/logo.png)
+
 This repo will be used to track my progress as I code the Roguelike Game at: [rogueliketutorials.com](http://rogueliketutorials.com/tutorials/tcod/)
 
 ### Initial setup
@@ -60,10 +62,11 @@ Distributed under the terms of the [MIT](https://opensource.org/licenses/MIT) li
 If you encounter any problems, please [file an issue](https://github.com/clamytoe/toepack/issues) along with a detailed description.
 
 ## Changelog
-* **v0.1.3** Completed part 3 of the tutorial.
-* **v0.1.2** Completed part 2 of the tutorial.
-* **v0.1.1** Completed part 1 of the tutorial.
-* **v0.1.0** Initial commit.
+* **v0.1.4** Part 4 - Field of view
+* **v0.1.3** Part 3 - Generating a dungeon
+* **v0.1.2** Part 2 - The generic Entity, the render functions, and the map
+* **v0.1.1** Part 1 - Drawing the ‘@’ symbol and moving it around
+* **v0.1.0** Part 0 - Setting up.
 
 [python-version]:https://img.shields.io/badge/python-3.7.3-brightgreen.svg
 [latest-version]:https://img.shields.io/badge/version-0.1.0-blue.svg
