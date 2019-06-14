@@ -41,7 +41,7 @@ COLORS = {
 
 
 def main():
-    player = Entity(0, 0, "@", tcod.white)
+    player = Entity(0, 0, "@", tcod.white, "Player", blocks=True)
     entities = [player]
 
     tcod.console_set_custom_font(
