@@ -9,8 +9,9 @@ from os import path
 import tcod
 import tcod.event
 
-from .entity import Entity
+from .entity import Entity, get_blocking_entities_at_location
 from .fov_functions import initialize_fov, recompute_fov
+from .game_states import GameStates
 from .input_handlers import handle_keys
 from .map_objects.game_map import GameMap
 from .render_functions import clear_all, clear_entity, draw_entity, render_all
@@ -53,6 +54,7 @@ def main():
     ) as con:
         key = tcod.Key()
         mouse = tcod.Mouse()
+        game_state = GameStates.PLAYERS_TURN
         game_map = GameMap(MAP_WIDTH, MAP_HEIGHT)
         game_map.make_map(
             MAX_ROOMS,
@@ -98,17 +100,40 @@ def main():
             exit_game = action.get("exit")
             full_screen = action.get("full_screen")
 
-            if move:
+            if move and game_state == GameStates.PLAYERS_TURN:
                 dx, dy = move
-                if not game_map.is_blocked(player.x + dx, player.y + dy):
-                    player.move(dx, dy)
-                    fov_recompute = True
+                destination_x = player.x + dx
+                destination_y = player.y + dy
+
+                if not game_map.is_blocked(destination_x, destination_y):
+                    target = get_blocking_entities_at_location(
+                        entities, destination_x, destination_y
+                    )
+
+                    if target:
+                        print(
+                            f"You kick the {target.name} in the shins, much to its annoyance!"
+                        )
+                    else:
+                        player.move(dx, dy)
+                        fov_recompute = True
+
+                    game_state = GameStates.ENEMY_TURN
 
             if exit_game:
                 return True
 
             if full_screen:
                 tcod.console_set_fullscreen(not tcod.console_is_fullscreen())
+
+            if game_state == GameStates.ENEMY_TURN:
+                for entity in entities:
+                    if entity != player:
+                        print(
+                            f"The {entity.name} ponders the meaning of its existence."
+                        )
+
+                game_state = GameStates.PLAYERS_TURN
 
 
 if __name__ == "__main__":

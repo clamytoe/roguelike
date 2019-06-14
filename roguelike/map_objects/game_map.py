@@ -5,6 +5,7 @@ from typing import List
 import tcod
 
 from roguelike.entity import Entity
+
 from .rectangle import Rect
 from .tile import Tile
 
