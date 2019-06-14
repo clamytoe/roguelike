@@ -11,6 +11,6 @@ KEYS = {
 
 def handle_keys(key):
     if key.vk == tcod.KEY_ENTER and key.lalt:
-        return {"fullscreen": True}
+        return {"full_screen": True}
     else:
         return KEYS.get(key.vk, {})
