@@ -105,7 +105,8 @@ class GameMap:
             self.tiles[x][y].blocked = False
             self.tiles[x][y].block_sight = False
 
-    def place_entities(self, room, entities, max_monsters_per_room):
+    @staticmethod
+    def place_entities(room, entities, max_monsters_per_room):
         """
         Places entities on the map
         :param room: The room to place the entity into
@@ -125,9 +126,11 @@ class GameMap:
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
                 if randint(0, 100) < 80:
-                    monster = Entity(x, y, "o", tcod.desaturated_green)
+                    monster = Entity(
+                        x, y, "o", tcod.desaturated_green, "Orc", blocks=True
+                    )
                 else:
-                    monster = Entity(x, y, "T", tcod.darker_green)
+                    monster = Entity(x, y, "T", tcod.darker_green, "Troll", blocks=True)
 
                 entities.append(monster)
 
