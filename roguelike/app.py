@@ -18,7 +18,7 @@ from .render_functions import clear_all, clear_entity, draw_entity, render_all
 TITLE = "roguelike tutorial"
 FONT_IMAGE = "arial10x10.png"
 HERE = path.abspath(path.dirname(__file__))
-CUSTOM_FONT = f"{HERE}/img/{FONT_IMAGE}"
+CUSTOM_FONT = f"{HERE}/resources/{FONT_IMAGE}"
 FULL_SCREEN = False
 PLAYER_BG = tcod.BKGND_NONE
 MAP_WIDTH = 80
@@ -31,6 +31,7 @@ MAX_ROOMS = 30
 FOV_ALGORITHM = 0
 FOV_LIGHT_WALLS = True
 FOV_RADIUS = 10
+MAX_MONSTERS_PER_ROOM = 3
 COLORS = {
     "dark_wall": tcod.Color(0, 0, 100),
     "dark_ground": tcod.Color(50, 50, 150),
@@ -40,9 +41,8 @@ COLORS = {
 
 
 def main():
-    npc = Entity(int(SCREEN_WIDTH / 2 - 5), int(SCREEN_HEIGHT / 2), "@", tcod.yellow)
-    player = Entity(int(SCREEN_WIDTH / 2), int(SCREEN_HEIGHT / 2), "@", tcod.white)
-    entities = [npc, player]
+    player = Entity(0, 0, "@", tcod.white)
+    entities = [player]
 
     tcod.console_set_custom_font(
         CUSTOM_FONT, tcod.FONT_TYPE_GRAYSCALE | tcod.FONT_LAYOUT_TCOD
@@ -55,7 +55,14 @@ def main():
         mouse = tcod.Mouse()
         game_map = GameMap(MAP_WIDTH, MAP_HEIGHT)
         game_map.make_map(
-            MAX_ROOMS, ROOM_MIN_SIZE, ROOM_MAX_SIZE, MAP_WIDTH, MAP_HEIGHT, player
+            MAX_ROOMS,
+            ROOM_MIN_SIZE,
+            ROOM_MAX_SIZE,
+            MAP_WIDTH,
+            MAP_HEIGHT,
+            player,
+            entities,
+            MAX_MONSTERS_PER_ROOM,
         )
         fov_recompute = True
         fov_map = initialize_fov(game_map)
