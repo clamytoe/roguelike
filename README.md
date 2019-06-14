@@ -62,6 +62,7 @@ Distributed under the terms of the [MIT](https://opensource.org/licenses/MIT) li
 If you encounter any problems, please [file an issue](https://github.com/clamytoe/toepack/issues) along with a detailed description.
 
 ## Changelog
+* **v0.1.5** Part 5 - Placing enemies and kicking them (harmlessly) 
 * **v0.1.4** Part 4 - Field of view
 * **v0.1.3** Part 3 - Generating a dungeon
 * **v0.1.2** Part 2 - The generic Entity, the render functions, and the map
