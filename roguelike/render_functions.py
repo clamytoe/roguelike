@@ -1,13 +1,30 @@
+from enum import Enum, auto
+
 import tcod
 
 
+class RenderOrder(Enum):
+    CORPSE = auto()
+    ITEM = auto()
+    ACTOR = auto()
+
+
 def render_all(
-    con, entities, game_map, fov_map, fov_recompute, screen_width, screen_height, colors
+    con,
+    entities,
+    player,
+    game_map,
+    fov_map,
+    fov_recompute,
+    screen_width,
+    screen_height,
+    colors,
 ):
     """
     Dra all entities in the list
     :param con: Console window to draw on
     :param entities: List of entities to draw
+    :param player: Player character class
     :param game_map: GameMap object
     :param fov_map: Field of View map
     :param fov_recompute: Boolean flag to determine if FOV should be recomputed
@@ -45,9 +62,20 @@ def render_all(
                         )
 
     # Draw all entities in the list
-    for entity in entities:
+    entities_in_render_order = sorted(entities, key=lambda x: x.render_order.value)
+
+    for entity in entities_in_render_order:
         draw_entity(con, entity, fov_map)
 
+    tcod.console_set_default_foreground(con, tcod.white)
+    tcod.console_print_ex(
+        con,
+        1,
+        screen_height - 2,
+        tcod.BKGND_NONE,
+        tcod.LEFT,
+        f"HP: {player.fighter.hp:02}/{player.fighter.max_hp:02}",
+    )
     tcod.console_blit(con, 0, 0, screen_width, screen_height, con, 0, 0)
 
 

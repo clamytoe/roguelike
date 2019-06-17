@@ -10,12 +10,13 @@ import tcod
 import tcod.event
 
 from .components.fighter import Fighter
+from .death_functions import kill_monster, kill_player
 from .entity import Entity, get_blocking_entities_at_location
 from .fov_functions import initialize_fov, recompute_fov
 from .game_states import GameStates
 from .input_handlers import handle_keys
 from .map_objects.game_map import GameMap
-from .render_functions import clear_all, clear_entity, draw_entity, render_all
+from .render_functions import RenderOrder, clear_all, render_all
 
 TITLE = "roguelike tutorial"
 FONT_IMAGE = "arial10x10.png"
@@ -44,7 +45,16 @@ COLORS = {
 
 def main():
     fighter_component = Fighter(hp=30, defense=2, power=5)
-    player = Entity(0, 0, "@", tcod.white, "Player", blocks=True, fighter=fighter_component)
+    player = Entity(
+        0,
+        0,
+        "@",
+        tcod.white,
+        "Player",
+        blocks=True,
+        render_order=RenderOrder.ACTOR,
+        fighter=fighter_component,
+    )
     entities = [player]
 
     tcod.console_set_custom_font(
@@ -87,6 +97,7 @@ def main():
             render_all(
                 con,
                 entities,
+                player,
                 game_map,
                 fov_map,
                 fov_recompute,
@@ -101,6 +112,7 @@ def main():
             move = action.get("move")
             exit_game = action.get("exit")
             full_screen = action.get("full_screen")
+            player_turn_results = []
 
             if move and game_state == GameStates.PLAYERS_TURN:
                 dx, dy = move
@@ -113,9 +125,8 @@ def main():
                     )
 
                     if target:
-                        print(
-                            f"You kick the {target.name} in the shins, much to its annoyance!"
-                        )
+                        attack_results = player.fighter.attack(target)
+                        player_turn_results.extend(attack_results)
                     else:
                         player.move(dx, dy)
                         fov_recompute = True
@@ -128,12 +139,51 @@ def main():
             if full_screen:
                 tcod.console_set_fullscreen(not tcod.console_is_fullscreen())
 
+            for player_turn_result in player_turn_results:
+                message = player_turn_result.get("message")
+                dead_entity = player_turn_result.get("dead")
+
+                if message:
+                    print(message)
+
+                if dead_entity:
+                    if dead_entity == player:
+                        message, game_state = kill_player(dead_entity)
+                    else:
+                        message = kill_monster(dead_entity)
+
+                    print(message)
+
             if game_state == GameStates.ENEMY_TURN:
                 for entity in entities:
                     if entity.ai:
-                        entity.ai.take_turn(player, fov_map, game_map, entities)
+                        enemy_turn_results = entity.ai.take_turn(
+                            player, fov_map, game_map, entities
+                        )
 
-                game_state = GameStates.PLAYERS_TURN
+                        for enemy_turn_result in enemy_turn_results:
+                            message = enemy_turn_result.get("message")
+                            dead_entity = enemy_turn_result.get("dead")
+
+                            if message:
+                                print(message)
+
+                            if dead_entity:
+                                if dead_entity == player:
+                                    message, game_state = kill_player(dead_entity)
+                                else:
+                                    message = kill_monster(dead_entity)
+
+                                print(message)
+
+                                if game_state == GameStates.PLAYER_DEAD:
+                                    break
+
+                        if game_state == GameStates.PLAYER_DEAD:
+                            break
+
+                else:
+                    game_state = GameStates.PLAYERS_TURN
 
 
 if __name__ == "__main__":

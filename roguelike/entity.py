@@ -5,6 +5,7 @@ from typing import Union
 import tcod
 from tcod.color import Color
 
+from .render_functions import RenderOrder
 from roguelike.components.ai import BasicMonster
 from roguelike.components.fighter import Fighter
 
@@ -21,6 +22,7 @@ class Entity:
     color: Color
     name: str
     blocks: bool = False
+    render_order: RenderOrder = RenderOrder.CORPSE
     fighter: Union[bool, Fighter] = False
     ai: Union[bool, BasicMonster] = False
 

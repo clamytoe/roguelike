@@ -8,6 +8,7 @@ from roguelike.entity import Entity
 
 from roguelike.components.ai import BasicMonster
 from roguelike.components.fighter import Fighter
+from roguelike.render_functions import RenderOrder
 from .rectangle import Rect
 from .tile import Tile
 
@@ -138,6 +139,7 @@ class GameMap:
                         tcod.desaturated_green,
                         "Orc",
                         blocks=True,
+                        render_order=RenderOrder.ACTOR,
                         fighter=fighter_component,
                         ai=ai_component,
                     )
@@ -151,6 +153,7 @@ class GameMap:
                         tcod.darker_green,
                         "Troll",
                         blocks=True,
+                        render_order=RenderOrder.ACTOR,
                         fighter=fighter_component,
                         ai=ai_component,
                     )
