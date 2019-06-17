@@ -7,6 +7,9 @@ class Fighter:
     defense: int
     power: int
 
+    def __post_init__(self):
+        self.max_hp: int = self.hp
+
     def take_damage(self, amount):
         results = []
         self.hp -= amount

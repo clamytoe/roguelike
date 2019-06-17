@@ -7,4 +7,4 @@ from roguelike import __version__
 
 
 def test_version():
-    assert __version__ == "0.1.5"
+    assert __version__ == "0.1.6"
