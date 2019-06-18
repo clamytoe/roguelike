@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from roguelike.game_messages import Message
+
 
 @dataclass
 class Fighter:
@@ -15,6 +17,7 @@ class Fighter:
         self.hp -= amount
 
         if self.hp <= 0:
+            self.hp = 0
             results.append({"dead": self.owner})
 
         return results
@@ -26,14 +29,18 @@ class Fighter:
         if damage > 0:
             results.append(
                 {
-                    "message": f"{self.owner.name.capitalize()} attacks {target.name} for {str(damage)} hit points."
+                    "message": Message(
+                        f"{self.owner.name.capitalize()} attacks {target.name} for {str(damage)} hit points."
+                    )
                 }
             )
             results.extend(target.fighter.take_damage(damage))
         else:
             results.append(
                 {
-                    "message": f"{self.owner.name.capitalize()} attacks {target.name} but does no damage."
+                    "message": Message(
+                        f"{self.owner.name.capitalize()} attacks {target.name} but does no damage."
+                    )
                 }
             )
 
