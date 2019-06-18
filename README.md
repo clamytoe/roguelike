@@ -62,6 +62,7 @@ Distributed under the terms of the [MIT](https://opensource.org/licenses/MIT) li
 If you encounter any problems, please [file an issue](https://github.com/clamytoe/toepack/issues) along with a detailed description.
 
 ## Changelog
+* **v0.1.7** Part 7 - Creating the Interface
 * **v0.1.6** Part 6 - Doing (and taking) some damage
 * **v0.1.5** Part 5 - Placing enemies and kicking them (harmlessly) 
 * **v0.1.4** Part 4 - Field of view
