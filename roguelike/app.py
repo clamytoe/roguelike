@@ -48,6 +48,7 @@ FOV_LIGHT_WALLS = True
 FOV_RADIUS = 10
 
 MAX_MONSTERS_PER_ROOM = 3
+MAX_ITEMS_PER_ROOM = 2
 COLORS = {
     "dark_wall": tcod.Color(0, 0, 100),
     "dark_ground": tcod.Color(50, 50, 150),
@@ -91,6 +92,7 @@ def main():
             player,
             entities,
             MAX_MONSTERS_PER_ROOM,
+            MAX_ITEMS_PER_ROOM,
         )
         fov_recompute = True
         fov_map = initialize_fov(game_map)
