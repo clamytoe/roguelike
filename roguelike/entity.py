@@ -5,9 +5,12 @@ from typing import Union
 import tcod
 from tcod.color import Color
 
-from .render_functions import RenderOrder
 from roguelike.components.ai import BasicMonster
 from roguelike.components.fighter import Fighter
+from roguelike.components.inventory import Inventory
+from roguelike.components.item import Item
+
+from .render_functions import RenderOrder
 
 
 @dataclass
@@ -25,6 +28,8 @@ class Entity:
     render_order: RenderOrder = RenderOrder.CORPSE
     fighter: Union[bool, Fighter] = False
     ai: Union[bool, BasicMonster] = False
+    item: Union[Item, None] = None
+    inventory: Union[Inventory, None] = None
 
     def __post_init__(self):
         if self.fighter:
@@ -32,6 +37,12 @@ class Entity:
 
         if self.ai:
             self.ai.owner = self
+
+        if self.item:
+            self.item.owner = self
+
+        if self.inventory:
+            self.inventory.owner = self
 
     def move(self, dx: int, dy: int) -> None:
         """

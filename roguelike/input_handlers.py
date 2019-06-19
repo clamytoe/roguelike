@@ -16,6 +16,7 @@ KB_KEYS = {
     "u": {"move": (1, -1)},
     "b": {"move": (-1, 1)},
     "n": {"move": (1, 1)},
+    "g": {"pickup": True},
 }
 
 

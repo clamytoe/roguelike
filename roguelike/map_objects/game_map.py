@@ -4,11 +4,12 @@ from typing import List
 
 import tcod
 
-from roguelike.entity import Entity
-
 from roguelike.components.ai import BasicMonster
 from roguelike.components.fighter import Fighter
+from roguelike.components.item import Item
+from roguelike.entity import Entity
 from roguelike.render_functions import RenderOrder
+
 from .rectangle import Rect
 from .tile import Tile
 
@@ -172,6 +173,7 @@ class GameMap:
             if not any(
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
+                item_component = Item()
                 item = Entity(
                     x,
                     y,
@@ -179,6 +181,7 @@ class GameMap:
                     tcod.violet,
                     "Healing Potion",
                     render_order=RenderOrder.ITEM,
+                    item=item_component,
                 )
 
                 entities.append(item)
