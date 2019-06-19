@@ -17,6 +17,7 @@ KB_KEYS = {
     "b": {"move": (-1, 1)},
     "n": {"move": (1, 1)},
     "g": {"pickup": True},
+    "i": {"show_inventory": True},
 }
 
 

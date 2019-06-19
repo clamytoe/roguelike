@@ -85,6 +85,7 @@ def main():
         key = tcod.Key()
         mouse = tcod.Mouse()
         game_state = GameStates.PLAYERS_TURN
+        previous_game_state = game_state
         game_map = GameMap(MAP_WIDTH, MAP_HEIGHT)
         game_map.make_map(
             MAX_ROOMS,
@@ -132,6 +133,7 @@ def main():
                 PANEL_Y,
                 mouse,
                 COLORS,
+                game_state,
             )
             fov_recompute = False
             tcod.console_flush()
@@ -139,6 +141,7 @@ def main():
             action = handle_keys(key)
             move = action.get("move")
             pickup = action.get("pickup")
+            show_inventory = action.get("show_inventory")
             exit_game = action.get("exit")
             full_screen = action.get("full_screen")
             player_turn_results = []
@@ -172,8 +175,15 @@ def main():
                         Message("There is nothing here to pick up.", tcod.yellow)
                     )
 
+            if show_inventory:
+                previous_game_state = game_state
+                game_state = GameStates.SHOW_INVENTORY
+
             if exit_game:
-                return True
+                if game_state == GameStates.SHOW_INVENTORY:
+                    game_state = previous_game_state
+                else:
+                    return True
 
             if full_screen:
                 tcod.console_set_fullscreen(not tcod.console_is_fullscreen())

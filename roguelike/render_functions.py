@@ -2,6 +2,10 @@ from enum import Enum, auto
 
 import tcod
 
+from roguelike.menus import inventory_menu
+
+from .game_states import GameStates
+
 
 class RenderOrder(Enum):
     CORPSE = auto()
@@ -60,6 +64,7 @@ def render_all(
     panel_y,
     mouse,
     colors,
+    game_state,
 ):
     """
     Dra all entities in the list
@@ -78,6 +83,7 @@ def render_all(
     :param panel_y: Placement of the panel with respect to the main console window
     :param mouse: Mouse pointer object
     :param colors: GameMap color values
+    :param game_state: GameState
     :return: None
     """
     # Draw all the tiles in the game map
@@ -150,6 +156,10 @@ def render_all(
     )
 
     tcod.console_blit(panel, 0, 0, screen_width, panel_height, con, 0, panel_y)
+
+    if game_state == GameStates.SHOW_INVENTORY:
+        msg = "Press the key next to an item to use it, or ESC to cancel.\n"
+        inventory_menu(con, msg, player.inventory, 50, screen_width, screen_height)
 
 
 def clear_all(con, entities):
