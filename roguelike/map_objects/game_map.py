@@ -8,6 +8,7 @@ from roguelike.components.ai import BasicMonster
 from roguelike.components.fighter import Fighter
 from roguelike.components.item import Item
 from roguelike.entity import Entity
+from roguelike.item_functions import heal
 from roguelike.render_functions import RenderOrder
 
 from .rectangle import Rect
@@ -173,7 +174,7 @@ class GameMap:
             if not any(
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
-                item_component = Item()
+                item_component = Item(use_function=heal, amount=4)
                 item = Entity(
                     x,
                     y,
