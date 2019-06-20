@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Union
 
 import tcod
 
@@ -11,7 +11,7 @@ from .item import Item
 @dataclass
 class Inventory:
     capacity: int
-    items: List[Item] = field(default_factory=list)
+    items: List[Union[Item, list]] = field(default_factory=list)
 
     def add_item(self, item):
         results = []

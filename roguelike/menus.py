@@ -31,7 +31,7 @@ def menu(con, header, options, width, screen_width, screen_height):
 
     # blit the contents of "window" to the root console
     x = int(screen_width / 2 - width / 2)
-    int(screen_height / 2 - height / 2)
+    y = int(screen_height / 2 - height / 2)
     tcod.console_blit(window, 0, 0, width, height, con, x, y, 1.0, 0.7)
 
 

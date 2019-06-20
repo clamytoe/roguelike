@@ -82,10 +82,13 @@ def main():
         SCREEN_WIDTH, SCREEN_HEIGHT, TITLE, FULL_SCREEN, tcod.RENDERER_SDL2, "F", True
     ) as con:
         panel = tcod.console_new(SCREEN_WIDTH, PANEL_HEIGHT)
+
         key = tcod.Key()
         mouse = tcod.Mouse()
+
         game_state = GameStates.PLAYERS_TURN
         previous_game_state = game_state
+
         game_map = GameMap(MAP_WIDTH, MAP_HEIGHT)
         game_map.make_map(
             MAX_ROOMS,
@@ -135,15 +138,20 @@ def main():
                 COLORS,
                 game_state,
             )
+
             fov_recompute = False
             tcod.console_flush()
             clear_all(con, entities)
-            action = handle_keys(key)
+
+            action = handle_keys(key, game_state)
+
             move = action.get("move")
             pickup = action.get("pickup")
             show_inventory = action.get("show_inventory")
+            inventory_index = action.get("inventory_index")
             exit_game = action.get("exit")
             full_screen = action.get("full_screen")
+
             player_turn_results = []
 
             if move and game_state == GameStates.PLAYERS_TURN:
@@ -178,6 +186,18 @@ def main():
             if show_inventory:
                 previous_game_state = game_state
                 game_state = GameStates.SHOW_INVENTORY
+
+            # if drop_inventory:
+            #     previous_game_state = game_state
+            #     game_state = GameStates.DROP_INVENTORY
+
+            if (
+                inventory_index is not None
+                and previous_game_state != GameStates.PLAYER_DEAD
+                and inventory_index < len(player.inventory.items)
+            ):
+                item = player.inventory.items[inventory_index]
+                print(item)
 
             if exit_game:
                 if game_state == GameStates.SHOW_INVENTORY:
