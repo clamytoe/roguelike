@@ -22,6 +22,7 @@ KB_KEYS = {
     "b": {"move": (-1, 1)},
     "n": {"move": (1, 1)},
     "g": {"pickup": True},
+    "d": {"drop_inventory": True},
     "i": INVENTORY,
 }
 
@@ -31,7 +32,7 @@ def handle_keys(key, game_state):
         return handle_player_turn_keys(key)
     elif game_state == GameStates.PLAYER_DEAD:
         return handle_player_dead_keys(key)
-    elif game_state == GameStates.SHOW_INVENTORY:
+    elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
         return handle_inventory_keys(key)
 
     return {}

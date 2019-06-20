@@ -157,9 +157,19 @@ def render_all(
 
     tcod.console_blit(panel, 0, 0, screen_width, panel_height, con, 0, panel_y)
 
-    if game_state == GameStates.SHOW_INVENTORY:
-        msg = "Press the key next to an item to use it, or ESC to cancel.\n"
-        inventory_menu(con, msg, player.inventory, 50, screen_width, screen_height)
+    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+        if game_state == GameStates.SHOW_INVENTORY:
+            inventory_title = (
+                "Press the key next to an item to use it, or ESC to cancel.\n"
+            )
+        else:
+            inventory_title = (
+                "Press the key next to an item to drop it, or ESC to cancel.\n"
+            )
+
+        inventory_menu(
+            con, inventory_title, player.inventory, 50, screen_width, screen_height
+        )
 
 
 def clear_all(con, entities):

@@ -21,7 +21,7 @@ def heal(*args, **kwargs):
             (
                 {
                     "consumed": True,
-                    "message": Message("Your wounds start to geel better!", tcod.green),
+                    "message": Message("Your wounds start to feel better!", tcod.green),
                 }
             )
         )
