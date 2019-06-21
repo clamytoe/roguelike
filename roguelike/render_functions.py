@@ -120,7 +120,7 @@ def render_all(
     for entity in entities_in_render_order:
         draw_entity(con, entity, fov_map)
 
-    tcod.console_blit(con, 0, 0, screen_width, screen_height, con, 0, 0)
+    tcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
     tcod.console_set_default_background(panel, tcod.black)
     tcod.console_clear(panel)
 
@@ -155,7 +155,7 @@ def render_all(
         get_names_under_mouse(mouse, entities, fov_map),
     )
 
-    tcod.console_blit(panel, 0, 0, screen_width, panel_height, con, 0, panel_y)
+    tcod.console_blit(panel, 0, 0, screen_width, panel_height, 0, 0, panel_y)
 
     if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
         if game_state == GameStates.SHOW_INVENTORY:

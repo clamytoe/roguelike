@@ -24,7 +24,10 @@ def menu(con, header, options, width, screen_width, screen_height):
     y = header_height
     letter_index = ord("a")
     for option_text in options:
-        text = f"({chr(letter_index)}) {option_text}"
+        if option_text == "Inventory is empty.":
+            text = f"( ) {option_text}"
+        else:
+            text = f"({chr(letter_index)}) {option_text}"
         tcod.console_print_ex(window, 0, y, tcod.BKGND_NONE, tcod.LEFT, text)
         y += 1
         letter_index += 1
@@ -32,7 +35,7 @@ def menu(con, header, options, width, screen_width, screen_height):
     # blit the contents of "window" to the root console
     x = int(screen_width / 2 - width / 2)
     y = int(screen_height / 2 - height / 2)
-    tcod.console_blit(window, 0, 0, width, height, con, x, y, 1.0, 0.7)
+    tcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
 
 
 def inventory_menu(
