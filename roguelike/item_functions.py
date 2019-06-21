@@ -74,3 +74,49 @@ def cast_lightning(*args, **kwargs):
         )
 
     return results
+
+
+def cast_fireball(*args, **kwargs):
+    entities = kwargs.get("entities")
+    fov_map = kwargs.get("fov_map")
+    damage = kwargs.get("damage")
+    radius = kwargs.get("radius")
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
+
+    results = []
+
+    if not tcod.map_is_in_fov(fov_map, target_x, target_y):
+        results.append(
+            {
+                "consumed": False,
+                "message": Message(
+                    "You cannot target a tile outside your field of view.", tcod.yellow
+                ),
+            }
+        )
+        return results
+
+    results.append(
+        {
+            "consumed": True,
+            "message": Message(
+                f"The fireball explodes, burning everything within {radius} tiles!",
+                tcod.orange,
+            ),
+        }
+    )
+
+    for entity in entities:
+        if entity.distance(target_x, target_y) <= radius and entity.fighter:
+            results.append(
+                {
+                    "message": Message(
+                        f"The {entity.name} gets burned for {damage} hit points.",
+                        tcod.orange,
+                    )
+                }
+            )
+            results.extend(entity.fighter.take_damage(damage))
+
+    return results

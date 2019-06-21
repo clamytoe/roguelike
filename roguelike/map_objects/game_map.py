@@ -8,7 +8,8 @@ from roguelike.components.ai import BasicMonster
 from roguelike.components.fighter import Fighter
 from roguelike.components.item import Item
 from roguelike.entity import Entity
-from roguelike.item_functions import cast_lightning, heal
+from roguelike.game_messages import Message
+from roguelike.item_functions import cast_fireball, cast_lightning, heal
 from roguelike.render_functions import RenderOrder
 
 from .rectangle import Rect
@@ -187,8 +188,30 @@ class GameMap:
                         render_order=RenderOrder.ITEM,
                         item=item_component,
                     )
+                elif item_chance < 85:
+                    item_component = Item(
+                        use_function=cast_fireball,
+                        targeting=True,
+                        targeting_message=Message(
+                            "Left-click a target tile for the fireball, or right-click to cancel",
+                            tcod.light_cyan,
+                        ),
+                        damage=12,
+                        radius=3,
+                    )
+                    item = Entity(
+                        x,
+                        y,
+                        "#",
+                        tcod.red,
+                        "Fireball scroll",
+                        render_order=RenderOrder.ITEM,
+                        item=item_component,
+                    )
                 else:
-                    item_component = Item(use_function=cast_lightning, damage=20, maximum_range=5)
+                    item_component = Item(
+                        use_function=cast_lightning, damage=20, maximum_range=5
+                    )
                     item = Entity(
                         x,
                         y,
