@@ -78,7 +78,9 @@ def main():
         CUSTOM_FONT, tcod.FONT_TYPE_GRAYSCALE | tcod.FONT_LAYOUT_TCOD
     )
 
-    tcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, TITLE, False)
+    tcod.console_init_root(
+        SCREEN_WIDTH, SCREEN_HEIGHT, TITLE, FULL_SCREEN, tcod.RENDERER_SDL2, "F", True
+    )
     con = tcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
     panel = tcod.console_new(SCREEN_WIDTH, PANEL_HEIGHT)
 
@@ -192,7 +194,9 @@ def main():
             item = player.inventory.items[inventory_index]
 
             if game_state == GameStates.SHOW_INVENTORY:
-                player_turn_results.extend(player.inventory.use(item))
+                player_turn_results.extend(
+                    player.inventory.use(item, entities=entities, fov_map=fov_map)
+                )
             elif game_state == GameStates.DROP_INVENTORY:
                 player_turn_results.extend(player.inventory.drop_item(item))
 

@@ -8,7 +8,7 @@ from roguelike.components.ai import BasicMonster
 from roguelike.components.fighter import Fighter
 from roguelike.components.item import Item
 from roguelike.entity import Entity
-from roguelike.item_functions import heal
+from roguelike.item_functions import cast_lightning, heal
 from roguelike.render_functions import RenderOrder
 
 from .rectangle import Rect
@@ -25,7 +25,7 @@ class GameMap:
         self.tiles = self.initialize_tiles()
 
     def initialize_tiles(self):
-        tiles = [[Tile(True) for y in range(self.height)] for x in range(self.width)]
+        tiles = [[Tile(True) for _ in range(self.height)] for _ in range(self.width)]
 
         return tiles
 
@@ -174,16 +174,30 @@ class GameMap:
             if not any(
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
-                item_component = Item(use_function=heal, amount=4)
-                item = Entity(
-                    x,
-                    y,
-                    "!",
-                    tcod.violet,
-                    "Healing Potion",
-                    render_order=RenderOrder.ITEM,
-                    item=item_component,
-                )
+                item_chance = randint(0, 100)
+
+                if item_chance < 70:
+                    item_component = Item(use_function=heal, amount=4)
+                    item = Entity(
+                        x,
+                        y,
+                        "!",
+                        tcod.violet,
+                        "Healing Potion",
+                        render_order=RenderOrder.ITEM,
+                        item=item_component,
+                    )
+                else:
+                    item_component = Item(use_function=cast_lightning, damage=20, maximum_range=5)
+                    item = Entity(
+                        x,
+                        y,
+                        "#",
+                        tcod.yellow,
+                        "Lightning Scroll",
+                        render_order=RenderOrder.ITEM,
+                        item=item_component,
+                    )
 
                 entities.append(item)
 
