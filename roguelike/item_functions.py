@@ -1,5 +1,7 @@
 import tcod
 
+from roguelike.components.ai import ConfusedMonster
+
 from .game_messages import Message
 
 
@@ -118,5 +120,55 @@ def cast_fireball(*args, **kwargs):
                 }
             )
             results.extend(entity.fighter.take_damage(damage))
+
+    return results
+
+
+def cast_confuse(*args, **kwargs):
+    entities = kwargs.get("entities")
+    fov_map = kwargs.get("fov_map")
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
+
+    results = []
+
+    if not tcod.map_is_in_fov(fov_map, target_x, target_y):
+        results.append(
+            {
+                "consumed": False,
+                "message": Message(
+                    "You cannot target a tile outside of your field of view.",
+                    tcod.yellow,
+                ),
+            }
+        )
+        return results
+
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y and entity.ai:
+            confused_ai = ConfusedMonster(entity.ai, 10)
+
+            confused_ai.owner = entity
+            entity.ai = confused_ai
+
+            results.append(
+                {
+                    "consumed": True,
+                    "message": Message(
+                        f"The eyes of the {entity.name} look vacant, as he starts to stumble around!",
+                        tcod.light_green,
+                    ),
+                }
+            )
+            break
+    else:
+        results.append(
+            {
+                "consumed": False,
+                "message": Message(
+                    "There is no targetable enemy at that location.", tcod.yellow
+                ),
+            }
+        )
 
     return results

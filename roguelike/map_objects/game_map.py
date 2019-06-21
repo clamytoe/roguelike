@@ -9,7 +9,8 @@ from roguelike.components.fighter import Fighter
 from roguelike.components.item import Item
 from roguelike.entity import Entity
 from roguelike.game_messages import Message
-from roguelike.item_functions import cast_fireball, cast_lightning, heal
+from roguelike.item_functions import (cast_confuse, cast_fireball,
+                                      cast_lightning, heal)
 from roguelike.render_functions import RenderOrder
 
 from .rectangle import Rect
@@ -188,7 +189,7 @@ class GameMap:
                         render_order=RenderOrder.ITEM,
                         item=item_component,
                     )
-                elif item_chance < 85:
+                elif item_chance < 80:
                     item_component = Item(
                         use_function=cast_fireball,
                         targeting=True,
@@ -205,6 +206,24 @@ class GameMap:
                         "#",
                         tcod.red,
                         "Fireball scroll",
+                        render_order=RenderOrder.ITEM,
+                        item=item_component,
+                    )
+                elif item_chance < 90:
+                    item_component = Item(
+                        use_function=cast_confuse,
+                        targeting=True,
+                        targeting_message=Message(
+                            "Left-click an enemy to confuse it, or right-click to cancel.",
+                            tcod.light_cyan,
+                        ),
+                    )
+                    item = Entity(
+                        x,
+                        y,
+                        "#",
+                        tcod.light_pink,
+                        "Confusion Scroll",
                         render_order=RenderOrder.ITEM,
                         item=item_component,
                     )
