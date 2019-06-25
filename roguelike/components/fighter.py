@@ -8,9 +8,11 @@ class Fighter:
     hp: int
     defense: int
     power: int
+    name: str = ""
 
     def __post_init__(self):
         self.max_hp: int = self.hp
+        self.owner = self
 
     def take_damage(self, amount):
         results = []

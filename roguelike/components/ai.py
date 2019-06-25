@@ -9,6 +9,9 @@ from roguelike.game_messages import Message
 
 @dataclass
 class BasicMonster:
+    def __post_init__(self):
+        self.owner = self
+
     def take_turn(self, target, fov_map, game_map, entities):
         results = []
         monster = self.owner
