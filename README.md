@@ -62,6 +62,7 @@ Distributed under the terms of the [MIT](https://opensource.org/licenses/MIT) li
 If you encounter any problems, please [file an issue](https://github.com/clamytoe/toepack/issues) along with a detailed description.
 
 ## Changelog
+* **v0.1.10** Part 10 - Saving and loading
 * **v0.1.9** Part 9 - Ranged Scrolls and Targeting
 * **v0.1.8** Part 8 - Items and Inventory
 * **v0.1.7** Part 7 - Creating the Interface
