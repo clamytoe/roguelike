@@ -9,111 +9,61 @@ from os import path
 import tcod
 import tcod.event
 
-from .components.fighter import Fighter
-from .components.inventory import Inventory
 from .death_functions import kill_monster, kill_player
-from .entity import Entity, get_blocking_entities_at_location
+from .entity import get_blocking_entities_at_location
 from .fov_functions import initialize_fov, recompute_fov
-from .game_messages import Message, MessageLog
+from .game_messages import Message
 from .game_states import GameStates
 from .input_handlers import handle_keys, handle_mouse
-from .map_objects.game_map import GameMap
-from .render_functions import RenderOrder, clear_all, render_all
+from .loader_functions.initialize_new_game import get_constants, get_game_variables
+from .render_functions import clear_all, render_all
 
-TITLE = "roguelike tutorial"
 FONT_IMAGE = "arial10x10.png"
 HERE = path.abspath(path.dirname(__file__))
 CUSTOM_FONT = f"{HERE}/resources/{FONT_IMAGE}"
-FULL_SCREEN = False
-
-PLAYER_BG = tcod.BKGND_NONE
-MAP_WIDTH = 80
-MAP_HEIGHT = 43
-SCREEN_WIDTH = 80
-SCREEN_HEIGHT = 50
-
-BAR_WIDTH = 20
-PANEL_HEIGHT = 7
-PANEL_Y = SCREEN_HEIGHT - PANEL_HEIGHT
-
-MESSAGE_X = BAR_WIDTH + 2
-MESSAGE_WIDTH = SCREEN_WIDTH - BAR_WIDTH - 2
-MESSAGE_HEIGHT = PANEL_HEIGHT - 1
-
-ROOM_MAX_SIZE = 10
-ROOM_MIN_SIZE = 6
-MAX_ROOMS = 30
-
-FOV_ALGORITHM = 0
-FOV_LIGHT_WALLS = True
-FOV_RADIUS = 10
-
-MAX_MONSTERS_PER_ROOM = 3
-MAX_ITEMS_PER_ROOM = 2
-COLORS = {
-    "dark_wall": tcod.Color(0, 0, 100),
-    "dark_ground": tcod.Color(50, 50, 150),
-    "light_wall": tcod.Color(130, 110, 50),
-    "light_ground": tcod.Color(200, 180, 50),
-}
 
 
 def main():
-    fighter_component = Fighter(hp=30, defense=2, power=5)
-    inventory_component = Inventory(26)
-    player = Entity(
-        0,
-        0,
-        "@",
-        tcod.white,
-        "Player",
-        blocks=True,
-        render_order=RenderOrder.ACTOR,
-        fighter=fighter_component,
-        inventory=inventory_component,
-    )
-    entities = [player]
+    constants = get_constants()
 
     tcod.console_set_custom_font(
         CUSTOM_FONT, tcod.FONT_TYPE_GRAYSCALE | tcod.FONT_LAYOUT_TCOD
     )
 
     tcod.console_init_root(
-        SCREEN_WIDTH, SCREEN_HEIGHT, TITLE, FULL_SCREEN, tcod.RENDERER_SDL2, "F", True
+        constants["screen_width"],
+        constants["screen_height"],
+        constants["window_title"],
+        constants["full_screen"],
+        constants["renderer"],
+        "F",
+        True,
     )
-    con = tcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
-    panel = tcod.console_new(SCREEN_WIDTH, PANEL_HEIGHT)
+    con = tcod.console_new(constants["screen_width"], constants["screen_height"])
+    panel = tcod.console_new(constants["screen_width"], constants["panel_height"])
+
+    player, entities, game_map, message_log, game_state = get_game_variables(constants)
+
+    fov_recompute = True
+    fov_map = initialize_fov(game_map)
 
     key = tcod.Key()
     mouse = tcod.Mouse()
 
-    game_state = GameStates.PLAYERS_TURN
     previous_game_state = game_state
-
     targeting_item = None
-
-    game_map = GameMap(MAP_WIDTH, MAP_HEIGHT)
-    game_map.make_map(
-        MAX_ROOMS,
-        ROOM_MIN_SIZE,
-        ROOM_MAX_SIZE,
-        MAP_WIDTH,
-        MAP_HEIGHT,
-        player,
-        entities,
-        MAX_MONSTERS_PER_ROOM,
-        MAX_ITEMS_PER_ROOM,
-    )
-    fov_recompute = True
-    fov_map = initialize_fov(game_map)
-    message_log = MessageLog(MESSAGE_X, MESSAGE_WIDTH, MESSAGE_HEIGHT)
 
     while not tcod.console_is_window_closed():
         tcod.sys_check_for_event(tcod.EVENT_KEY_PRESS | tcod.EVENT_MOUSE, key, mouse)
 
         if fov_recompute:
             recompute_fov(
-                fov_map, player.x, player.y, FOV_RADIUS, FOV_LIGHT_WALLS, FOV_ALGORITHM
+                fov_map,
+                player.x,
+                player.y,
+                constants["fov_radius"],
+                constants["fov_light_walls"],
+                constants["fov_algorithm"],
             )
 
         render_all(
@@ -125,13 +75,13 @@ def main():
             fov_map,
             fov_recompute,
             message_log,
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT,
-            BAR_WIDTH,
-            PANEL_HEIGHT,
-            PANEL_Y,
+            constants["screen_width"],
+            constants["screen_height"],
+            constants["bar_width"],
+            constants["panel_height"],
+            constants["panel_y"],
             mouse,
-            COLORS,
+            constants["colors"],
             game_state,
         )
 

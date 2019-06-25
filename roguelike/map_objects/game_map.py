@@ -9,8 +9,7 @@ from roguelike.components.fighter import Fighter
 from roguelike.components.item import Item
 from roguelike.entity import Entity
 from roguelike.game_messages import Message
-from roguelike.item_functions import (cast_confuse, cast_fireball,
-                                      cast_lightning, heal)
+from roguelike.item_functions import cast_confuse, cast_fireball, cast_lightning, heal
 from roguelike.render_functions import RenderOrder
 
 from .rectangle import Rect
