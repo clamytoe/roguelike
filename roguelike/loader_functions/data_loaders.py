@@ -1,8 +1,10 @@
 import os
 import shelve
 
-
-GAME_FILE = "save_game.dat"
+FILE_NAME = "save_game"
+HERE = os.path.realpath(os.path.curdir)
+GAME_FILE = f"{HERE}/{FILE_NAME}"
+print(GAME_FILE)
 
 
 def save_game(player, entities, game_map, message_log, game_state):
@@ -15,7 +17,7 @@ def save_game(player, entities, game_map, message_log, game_state):
 
 
 def load_game():
-    if not os.path.isfile(GAME_FILE):
+    if not os.path.isfile(f"{GAME_FILE}.dat"):
         raise FileNotFoundError
 
     with shelve.open(GAME_FILE, "r") as data_file:

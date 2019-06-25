@@ -86,6 +86,19 @@ def handle_player_dead_keys(key):
     return {}
 
 
+def handle_main_menu(key):
+    if key.vk == tcod.KEY_ESCAPE:
+        return ESCAPE
+
+    menu_keys = {
+        "a": {"new_game": True},
+        "b": {"load_game": True},
+        "c": ESCAPE,
+    }
+
+    return menu_keys.get(chr(key.c), {})
+
+
 def handle_mouse(mouse):
     x, y = (mouse.cx, mouse.cy)
 
