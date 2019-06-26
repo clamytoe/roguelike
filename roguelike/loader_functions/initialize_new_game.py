@@ -2,6 +2,7 @@ import tcod
 
 from roguelike.components.fighter import Fighter
 from roguelike.components.inventory import Inventory
+from roguelike.components.level import Level
 from roguelike.entity import Entity
 from roguelike.game_messages import MessageLog
 from roguelike.game_states import GameStates
@@ -78,6 +79,7 @@ def get_constants():
 def get_game_variables(constants):
     fighter_component = Fighter(hp=30, defense=2, power=5)
     inventory_component = Inventory(26)
+    level_component = Level()
     player = Entity(
         0,
         0,
@@ -88,6 +90,7 @@ def get_game_variables(constants):
         render_order=RenderOrder.ACTOR,
         fighter=fighter_component,
         inventory=inventory_component,
+        level=level_component,
     )
     entities = [player]
 

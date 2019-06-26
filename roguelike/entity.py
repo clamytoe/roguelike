@@ -9,6 +9,7 @@ from roguelike.components.ai import BasicMonster
 from roguelike.components.fighter import Fighter
 from roguelike.components.inventory import Inventory
 from roguelike.components.item import Item
+from roguelike.components.level import Level
 from roguelike.components.stairs import Stairs
 
 from .render_functions import RenderOrder
@@ -32,6 +33,7 @@ class Entity:
     item: Union[Item, None] = None
     inventory: Union[Inventory, None] = None
     stairs: Union[Stairs, None] = None
+    level: Union[Level, None] = None
 
     def __post_init__(self):
         if self.fighter:
@@ -48,6 +50,9 @@ class Entity:
 
         if self.stairs:
             self.stairs.owner = self
+
+        if self.level:
+            self.level.owner = self
 
     def move(self, dx: int, dy: int) -> None:
         """

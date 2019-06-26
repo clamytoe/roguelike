@@ -192,6 +192,7 @@ def play_game(
             item_dropped = player_turn_result.get("item_dropped")
             targeting = player_turn_result.get("targeting")
             targeting_cancelled = player_turn_result.get("targeting_cancelled")
+            xp = player_turn_result.get("xp")
 
             if message:
                 message_log.add_message(message)
@@ -226,6 +227,20 @@ def play_game(
             if targeting_cancelled:
                 game_state = previous_game_state
                 message_log.add_message(Message("Targeting cancelled"))
+
+            if xp:
+                leveled_up = player.level.add_xp(xp)
+                message_log.add_message(Message(f"You gain {xp} experience points"))
+
+                if leveled_up:
+                    message_log.add_message(
+                        Message(
+                            f"Your battle skills grow stronger! You reached level {player.level.current_level}!",
+                            tcod.yellow,
+                        )
+                    )
+                    previous_game_state = game_state
+                    game_state = GameStates.LEVEL_UP
 
         if game_state == GameStates.ENEMY_TURN:
             for entity in entities:

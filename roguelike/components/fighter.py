@@ -9,6 +9,7 @@ class Fighter:
     defense: int
     power: int
     name: str = ""
+    xp: int = 0
 
     def __post_init__(self):
         self.max_hp: int = self.hp
@@ -20,7 +21,7 @@ class Fighter:
 
         if self.hp <= 0:
             self.hp = 0
-            results.append({"dead": self.owner})
+            results.append({"dead": self.owner, "xp": self.xp})
 
         return results
 
