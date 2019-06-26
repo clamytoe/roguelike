@@ -24,6 +24,8 @@ KB_KEYS = {
     "n": {"move": (1, 1)},
     "g": {"pickup": True},
     "d": {"drop_inventory": True},
+    "c": {"show_character_screen": True},
+    "z": {"wait": True},
     "i": INVENTORY,
 }
 
@@ -37,6 +39,10 @@ def handle_keys(key, game_state):
         return handle_targeting_keys(key)
     elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
         return handle_inventory_keys(key)
+    elif game_state == GameStates.LEVEL_UP:
+        return handle_level_up_menu(key)
+    elif game_state == GameStates.CHARACTER_SCREEN:
+        return handle_character_screen(key)
 
     return {}
 
@@ -94,6 +100,23 @@ def handle_main_menu(key):
     menu_keys = {"a": {"new_game": True}, "b": {"load_game": True}, "c": ESCAPE}
 
     return menu_keys.get(chr(key.c), {})
+
+
+def handle_level_up_menu(key):
+    level_up_keys = {
+        "a": {"level_up": "hp"},
+        "b": {"level_up": "str"},
+        "c": {"level_up": "def"},
+    }
+
+    return level_up_keys.get(chr(key.c), {})
+
+
+def handle_character_screen(key):
+    if key.vk == tcod.KEY_ESCAPE:
+        return ESCAPE
+
+    return {}
 
 
 def handle_mouse(mouse):
