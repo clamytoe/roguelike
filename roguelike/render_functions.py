@@ -8,6 +8,7 @@ from .game_states import GameStates
 
 
 class RenderOrder(Enum):
+    STAIRS = auto()
     CORPSE = auto()
     ITEM = auto()
     ACTOR = auto()
@@ -118,7 +119,7 @@ def render_all(
     entities_in_render_order = sorted(entities, key=lambda e: e.render_order.value)
 
     for entity in entities_in_render_order:
-        draw_entity(con, entity, fov_map)
+        draw_entity(con, entity, fov_map, game_map)
 
     tcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
     tcod.console_set_default_background(panel, tcod.black)
@@ -183,15 +184,18 @@ def clear_all(con, entities):
         clear_entity(con, entity)
 
 
-def draw_entity(con, entity, fov_map):
+def draw_entity(con, entity, fov_map, game_map):
     """
     Draw an entity on the screen
     :param con: Console window
     :param entity: Entity object to draw
     :param fov_map: Field of View map
+    :param game_map: GameMap object
     :return:
     """
-    if tcod.map_is_in_fov(fov_map, entity.x, entity.y):
+    if tcod.map_is_in_fov(fov_map, entity.x, entity.y) or (
+        entity.stairs and game_map.tiles[entity.x][entity.y].explored
+    ):
         tcod.console_set_default_foreground(con, entity.color)
         tcod.console_put_char(con, entity.x, entity.y, entity.char, tcod.BKGND_NONE)
 
