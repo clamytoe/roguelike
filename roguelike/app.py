@@ -14,9 +14,9 @@ from .entity import get_blocking_entities_at_location
 from .fov_functions import initialize_fov, recompute_fov
 from .game_messages import Message
 from .game_states import GameStates
-from .input_handlers import handle_keys, handle_mouse, handle_main_menu
-from .loader_functions.initialize_new_game import get_constants, get_game_variables
+from .input_handlers import handle_keys, handle_main_menu, handle_mouse
 from .loader_functions.data_loaders import load_game, save_game
+from .loader_functions.initialize_new_game import get_constants, get_game_variables
 from .menus import main_menu, message_box
 from .render_functions import clear_all, render_all
 
@@ -86,6 +86,7 @@ def play_game(
         show_inventory = action.get("show_inventory")
         drop_inventory = action.get("drop_inventory")
         inventory_index = action.get("inventory_index")
+        take_stairs = action.get("take_stairs")
         exit_game = action.get("exit")
         full_screen = action.get("full_screen")
 
@@ -144,6 +145,18 @@ def play_game(
                 )
             elif game_state == GameStates.DROP_INVENTORY:
                 player_turn_results.extend(player.inventory.drop_item(item))
+
+        if take_stairs and game_state == GameStates.PLAYERS_TURN:
+            for entity in entities:
+                if entity.stairs and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.next_floor(player, message_log, constants)
+                    fov_recompute = True
+                    tcod.console_clear(con)
+                    break
+            else:
+                message_log.add_message(
+                    (Message("There are no stairs here.", tcod.yellow))
+                )
 
         if game_state == GameStates.TARGETING:
             if left_click:

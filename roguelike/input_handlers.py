@@ -10,6 +10,7 @@ TCOD_KEYS = {
     tcod.KEY_DOWN: {"move": (0, 1)},
     tcod.KEY_LEFT: {"move": (-1, 0)},
     tcod.KEY_RIGHT: {"move": (1, 0)},
+    tcod.KEY_ENTER: {"take_stairs": True},
     tcod.KEY_ESCAPE: ESCAPE,
 }
 KB_KEYS = {
@@ -90,11 +91,7 @@ def handle_main_menu(key):
     if key.vk == tcod.KEY_ESCAPE:
         return ESCAPE
 
-    menu_keys = {
-        "a": {"new_game": True},
-        "b": {"load_game": True},
-        "c": ESCAPE,
-    }
+    menu_keys = {"a": {"new_game": True}, "b": {"load_game": True}, "c": ESCAPE}
 
     return menu_keys.get(chr(key.c), {})
 
