@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import tcod
+
 from roguelike.game_messages import Message
 
 
@@ -39,7 +41,8 @@ class Fighter:
             results.append(
                 {
                     "message": Message(
-                        f"{self.owner.name.capitalize()} attacks {target.name} for {str(damage)} hit points."
+                        f"{self.owner.name.capitalize()} attacks {target.name} for {damage} hit points.",
+                        tcod.white,
                     )
                 }
             )
@@ -48,7 +51,8 @@ class Fighter:
             results.append(
                 {
                     "message": Message(
-                        f"{self.owner.name.capitalize()} attacks {target.name} but does no damage."
+                        f"{self.owner.name.capitalize()} attacks {target.name} but does no damage.",
+                        tcod.white,
                     )
                 }
             )

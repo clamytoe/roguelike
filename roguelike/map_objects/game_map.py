@@ -11,6 +11,7 @@ from roguelike.components.stairs import Stairs
 from roguelike.entity import Entity
 from roguelike.game_messages import Message
 from roguelike.item_functions import cast_confuse, cast_fireball, cast_lightning, heal
+from roguelike.random_utils import from_dungeon_level, random_choice_from_dict
 from roguelike.render_functions import RenderOrder
 
 from .rectangle import Rect
@@ -41,8 +42,6 @@ class GameMap:
         map_height,
         player,
         entities,
-        max_monsters_per_room,
-        max_items_per_room,
     ):
         rooms = []
         num_rooms = 0
@@ -98,9 +97,7 @@ class GameMap:
                         self.create_v_tunnel(prev_y, new_y, prev_x)
                         self.create_h_tunnel(prev_x, new_x, new_y)
 
-                self.place_entities(
-                    new_room, entities, max_monsters_per_room, max_items_per_room
-                )
+                self.place_entities(new_room, entities)
 
                 # finally, append the new room to the list
                 rooms.append(new_room)
@@ -135,19 +132,34 @@ class GameMap:
             self.tiles[x][y].blocked = False
             self.tiles[x][y].block_sight = False
 
-    @staticmethod
-    def place_entities(room, entities, max_monsters_per_room, max_items_per_room):
+    def place_entities(self, room, entities):
         """
         Places entities on the map
         :param room: The room to place the entity into
         :param entities: The entities to place
-        :param max_monsters_per_room: Max amount of monsters in the room
-        :param max_items_per_room: Max amount of items to place in the room
         :return: None
         """
+        max_monsters_per_room = from_dungeon_level(
+            [[2, 1], [3, 4], [5, 6]], self.dungeon_level
+        )
+        max_items_per_room = from_dungeon_level([[1, 1], [2, 4]], self.dungeon_level)
+
         # Get a random number of monsters
         number_of_monsters = randint(0, max_monsters_per_room)
         number_of_items = randint(0, max_items_per_room)
+
+        monster_chances = {
+            "orc": 80,
+            "troll": from_dungeon_level(
+                [[15, 3], [30, 5], [60, 7]], self.dungeon_level
+            ),
+        }
+        item_chances = {
+            "healing_potion": 35,
+            "lightning_scroll": from_dungeon_level([[25, 4]], self.dungeon_level),
+            "fireball_scroll": from_dungeon_level([[25, 6]], self.dungeon_level),
+            "confusion_scroll": from_dungeon_level([[10, 2]], self.dungeon_level),
+        }
 
         for i in range(number_of_monsters):
             # Choose a random location in the room
@@ -157,8 +169,10 @@ class GameMap:
             if not any(
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
-                if randint(0, 100) < 80:
-                    fighter_component = Fighter(hp=10, defense=0, power=3, xp=35)
+                monster_choice = random_choice_from_dict(monster_chances)
+
+                if monster_choice == "orc":
+                    fighter_component = Fighter(hp=20, defense=0, power=4, xp=35)
                     ai_component = BasicMonster()
                     monster = Entity(
                         x,
@@ -172,7 +186,7 @@ class GameMap:
                         ai=ai_component,
                     )
                 else:
-                    fighter_component = Fighter(hp=16, defense=1, power=4, xp=100)
+                    fighter_component = Fighter(hp=30, defense=2, power=8, xp=100)
                     ai_component = BasicMonster()
                     monster = Entity(
                         x,
@@ -195,10 +209,10 @@ class GameMap:
             if not any(
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
-                item_chance = randint(0, 100)
+                item_choice = random_choice_from_dict(item_chances)
 
-                if item_chance < 70:
-                    item_component = Item(use_function=heal, amount=4)
+                if item_choice == "healing_potion":
+                    item_component = Item(use_function=heal, amount=40)
                     item = Entity(
                         x,
                         y,
@@ -208,7 +222,7 @@ class GameMap:
                         render_order=RenderOrder.ITEM,
                         item=item_component,
                     )
-                elif item_chance < 80:
+                elif item_choice == "fireball_scroll":
                     item_component = Item(
                         use_function=cast_fireball,
                         targeting=True,
@@ -216,7 +230,7 @@ class GameMap:
                             "Left-click a target tile for the fireball, or right-click to cancel",
                             tcod.light_cyan,
                         ),
-                        damage=12,
+                        damage=25,
                         radius=3,
                     )
                     item = Entity(
@@ -228,7 +242,7 @@ class GameMap:
                         render_order=RenderOrder.ITEM,
                         item=item_component,
                     )
-                elif item_chance < 90:
+                elif item_choice == "confusion_scroll":
                     item_component = Item(
                         use_function=cast_confuse,
                         targeting=True,
@@ -248,7 +262,7 @@ class GameMap:
                     )
                 else:
                     item_component = Item(
-                        use_function=cast_lightning, damage=20, maximum_range=5
+                        use_function=cast_lightning, damage=40, maximum_range=5
                     )
                     item = Entity(
                         x,
@@ -281,8 +295,6 @@ class GameMap:
             constants["map_height"],
             player,
             entities,
-            constants["max_monsters_per_room"],
-            constants["max_items_per_room"],
         )
 
         player.fighter.heal(player.fighter.max_hp // 2)
