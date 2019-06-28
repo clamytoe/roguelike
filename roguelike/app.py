@@ -165,12 +165,12 @@ def play_game(
 
         if level_up:
             if level_up == "hp":
-                player.fighter.max_hp += 20
+                player.fighter.base_max_hp += 20
                 player.fighter.hp += 20
             elif level_up == "str":
-                player.fighter.power += 1
+                player.fighter.base_power += 1
             elif level_up == "def":
-                player.fighter.defense += 1
+                player.fighter.base_defense += 1
 
             game_state = previous_game_state
 
@@ -214,6 +214,7 @@ def play_game(
             item_added = player_turn_result.get("item_added")
             item_consumed = player_turn_result.get("consumed")
             item_dropped = player_turn_result.get("item_dropped")
+            equip = player_turn_result.get("equip")
             targeting = player_turn_result.get("targeting")
             targeting_cancelled = player_turn_result.get("targeting_cancelled")
             xp = player_turn_result.get("xp")
@@ -240,6 +241,25 @@ def play_game(
                 entities.append(item_dropped)
                 game_state = GameStates.ENEMY_TURN
 
+            if equip:
+                equip_results = player.equipment.toggle_equip(equip)
+
+                for equip_result in equip_results:
+                    equipped = equip_result.get("equipped")
+                    dequipped = equip_result.get("dequipped")
+
+                    if equipped:
+                        message_log.add_message(
+                            Message(f"You equipped the {equipped.name}", tcod.darker_green)
+                        )
+
+                    if dequipped:
+                        message_log.add_message(
+                            Message(f"You dequipped the {dequipped.name}", tcod.light_green)
+                        )
+
+                game_state = GameStates.ENEMY_TURN
+
             if targeting:
                 previous_game_state = GameStates.PLAYERS_TURN
                 game_state = GameStates.TARGETING
@@ -250,11 +270,11 @@ def play_game(
 
             if targeting_cancelled:
                 game_state = previous_game_state
-                message_log.add_message(Message("Targeting cancelled"))
+                message_log.add_message(Message("Targeting cancelled", tcod.yellow))
 
             if xp:
                 level_up = player.level.add_xp(xp)
-                message_log.add_message(Message(f"You gain {xp} experience points"))
+                message_log.add_message(Message(f"You gain {xp} experience points", tcod.green))
 
                 if level_up:
                     message_log.add_message(

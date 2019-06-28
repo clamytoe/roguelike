@@ -5,10 +5,13 @@ from typing import List
 import tcod
 
 from roguelike.components.ai import BasicMonster
+from roguelike.components.equipment import Equipment
+from roguelike.components.equippable import Equippable
 from roguelike.components.fighter import Fighter
 from roguelike.components.item import Item
 from roguelike.components.stairs import Stairs
 from roguelike.entity import Entity
+from roguelike.equipment_slots import EquipmentSlots
 from roguelike.game_messages import Message
 from roguelike.item_functions import cast_confuse, cast_fireball, cast_lightning, heal
 from roguelike.random_utils import from_dungeon_level, random_choice_from_dict
@@ -156,6 +159,8 @@ class GameMap:
         }
         item_chances = {
             "healing_potion": 35,
+            "sword": from_dungeon_level([[5, 4]], self.dungeon_level),
+            "shield": from_dungeon_level([[15, 8]], self.dungeon_level),
             "lightning_scroll": from_dungeon_level([[25, 4]], self.dungeon_level),
             "fireball_scroll": from_dungeon_level([[25, 6]], self.dungeon_level),
             "confusion_scroll": from_dungeon_level([[10, 2]], self.dungeon_level),
@@ -221,6 +226,25 @@ class GameMap:
                         "Healing Potion",
                         render_order=RenderOrder.ITEM,
                         item=item_component,
+                    )
+                elif item_choice == "sword":
+                    equippable_component = Equippable(
+                        EquipmentSlots.MAIN_HAND, power_bonus=3
+                    )
+                    item = Entity(
+                        x, y, "/", tcod.sky, "Sword", equippable=equippable_component
+                    )
+                elif item_choice == "shield":
+                    equippable_component = Equippable(
+                        EquipmentSlots.OFF_HAND, defense_bonus=1
+                    )
+                    item = Entity(
+                        x,
+                        y,
+                        "[",
+                        tcod.darker_orange,
+                        "Shield",
+                        equippable=equippable_component,
                     )
                 elif item_choice == "fireball_scroll":
                     item_component = Item(

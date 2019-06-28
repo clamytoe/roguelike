@@ -6,6 +6,8 @@ import tcod
 from tcod.color import Color
 
 from roguelike.components.ai import BasicMonster
+from roguelike.components.equipment import Equipment
+from roguelike.components.equippable import Equippable
 from roguelike.components.fighter import Fighter
 from roguelike.components.inventory import Inventory
 from roguelike.components.item import Item
@@ -34,6 +36,8 @@ class Entity:
     inventory: Union[Inventory, None] = None
     stairs: Union[Stairs, None] = None
     level: Union[Level, None] = None
+    equipment: Union[Equipment, None] = None
+    equippable: Union[Equippable, None] = None
 
     def __post_init__(self):
         if self.fighter:
@@ -53,6 +57,17 @@ class Entity:
 
         if self.level:
             self.level.owner = self
+
+        if self.equipment:
+            self.equipment.owner = self
+
+        if self.equippable:
+            self.equippable.owner = self
+
+            if not self.item:
+                item = Item()
+                self.item = item
+                self.item.owner = self
 
     def move(self, dx: int, dy: int) -> None:
         """

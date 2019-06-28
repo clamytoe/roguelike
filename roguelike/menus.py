@@ -38,14 +38,20 @@ def menu(con, header, options, width, screen_width, screen_height):
     tcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
 
 
-def inventory_menu(
-    con, header, inventory, inventory_width, screen_width, screen_height
-):
+def inventory_menu(con, header, player, inventory_width, screen_width, screen_height):
     # show a menu with each item of the inventory as an option
-    if len(inventory.items) == 0:
+    if len(player.inventory.items) == 0:
         options = ["Inventory is empty."]
     else:
-        options = [item.name for item in inventory.items]
+        options = []
+
+        for item in player.inventory.items:
+            if player.equipment.main_hand == item:
+                options.append(f"{item.name} (on main hand)")
+            elif player.equipment.off_hand == item:
+                options.append(f"{item.name} (on off hand)")
+            else:
+                options.append(item.name)
 
     menu(con, header, options, inventory_width, screen_width, screen_height)
 
@@ -76,8 +82,8 @@ def main_menu(con, background_image, screen_width, screen_height):
 def level_up_menu(con, header, player, menu_width, screen_width, screen_height):
     options = [
         f"Constitution (+20 HP, from {player.fighter.max_hp}",
-        f"Strength (+1 attack, from {player.fighter.power}",
-        f"Agility (+1 defense, from {player.fighter.defense}",
+        f"Strength (+1 attack, from {player.fighter.power_level}",
+        f"Agility (+1 defense, from {player.fighter.defense_level}",
     ]
     menu(con, header, options, menu_width, screen_width, screen_height)
 
@@ -147,7 +153,7 @@ def character_screen(
         character_screen_height,
         tcod.BKGND_NONE,
         tcod.LEFT,
-        "Attack: {0}".format(player.fighter.power),
+        "Attack: {0}".format(player.fighter.power_level),
     )
     tcod.console_print_rect_ex(
         window,
@@ -157,7 +163,7 @@ def character_screen(
         character_screen_height,
         tcod.BKGND_NONE,
         tcod.LEFT,
-        "Defense: {0}".format(player.fighter.defense),
+        "Defense: {0}".format(player.fighter.defense_level),
     )
 
     x = screen_width // 2 - character_screen_width // 2
