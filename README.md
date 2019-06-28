@@ -62,6 +62,7 @@ Distributed under the terms of the [MIT](https://opensource.org/licenses/MIT) li
 If you encounter any problems, please [file an issue](https://github.com/clamytoe/toepack/issues) along with a detailed description.
 
 ## Changelog
+* **v0.1.13** Part 13 - Gearing up
 * **v0.1.12** Part 12 - Increasing Difficulty
 * **v0.1.11** Part 11 - Delving into the Dungeon
 * **v0.1.10** Part 10 - Saving and loading
