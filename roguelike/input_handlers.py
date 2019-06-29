@@ -31,20 +31,9 @@ KB_KEYS = {
 
 
 def handle_keys(key, game_state):
-    if game_state == GameStates.PLAYERS_TURN:
-        return handle_player_turn_keys(key)
-    elif game_state == GameStates.PLAYER_DEAD:
-        return handle_player_dead_keys(key)
-    elif game_state == GameStates.TARGETING:
-        return handle_targeting_keys(key)
-    elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
-        return handle_inventory_keys(key)
-    elif game_state == GameStates.LEVEL_UP:
-        return handle_level_up_menu(key)
-    elif game_state == GameStates.CHARACTER_SCREEN:
-        return handle_character_screen(key)
+    func = GAME_STATES.get(game_state, {})
 
-    return {}
+    return func(key) if func else func
 
 
 def handle_inventory_keys(key):
@@ -113,10 +102,7 @@ def handle_level_up_menu(key):
 
 
 def handle_character_screen(key):
-    if key.vk == tcod.KEY_ESCAPE:
-        return ESCAPE
-
-    return {}
+    return ESCAPE if key.vk == tcod.KEY_ESCAPE or chr(key.c) == "c" else {}
 
 
 def handle_mouse(mouse):
@@ -128,3 +114,14 @@ def handle_mouse(mouse):
         return {"right_click": (x, y)}
 
     return {}
+
+
+GAME_STATES = {
+    GameStates.PLAYERS_TURN: handle_player_turn_keys,
+    GameStates.PLAYER_DEAD: handle_player_dead_keys,
+    GameStates.TARGETING: handle_targeting_keys,
+    GameStates.LEVEL_UP: handle_level_up_menu,
+    GameStates.CHARACTER_SCREEN: handle_character_screen,
+    GameStates.SHOW_INVENTORY: handle_inventory_keys,
+    GameStates.DROP_INVENTORY: handle_inventory_keys,
+}
