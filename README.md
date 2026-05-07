@@ -1,4 +1,5 @@
 # Roguelike Game (*roguelike*)
+
 > *My journey into creating a roguelike game based off TCOD Roguelike Tutorial*
 
 ![Python version][python-version]
@@ -14,40 +15,49 @@ NOTE: This app was generated with [Cookiecutter](https://github.com/audreyr/cook
 
 This repo will be used to track my progress as I code the Roguelike Game at: [rogueliketutorials.com](http://rogueliketutorials.com/tutorials/tcod/)
 
-### Initial setup
+## Initial setup
+
 ```zsh
 cd Projects
 git clone https://github.com/clamytoe/roguelike.git
 cd roguelike
 ```
 
-#### Anaconda setup
+### Anaconda setup
+
 If you are an Anaconda user, this command will get you up to speed with the base installation.
+
 ```zsh
 conda env create
 conda activate roguelike
 ```
 
-#### Regular Python setup
+### Regular Python setup
+
 If you are just using normal Python, this will get you ready, but I highly recommend that you do this in a virtual environment. There are many ways to do this, the simplest using *venv*.
+
 ```zsh
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### Final setup
+### Final setup
+
 ```zsh
 pip install -e .
 ```
 
 ## Usage
+
 ```zsh
 roguelike
 ```
 
 ## Contributing
+
 Contributions are very welcome. Tests can be run with with `pytest -v`, please ensure that all tests are passing and that you've checked your code with the following packages before submitting a pull request:
+
 * black
 * isort
 * mypy
@@ -56,12 +66,15 @@ Contributions are very welcome. Tests can be run with with `pytest -v`, please e
 I am not adhering to them strictly, but try to clean up what's reasonable.
 
 ## License
+
 Distributed under the terms of the [MIT](https://opensource.org/licenses/MIT) license, "roguelike" is free and open source software.
 
 ## Issues
+
 If you encounter any problems, please [file an issue](https://github.com/clamytoe/toepack/issues) along with a detailed description.
 
 ## Changelog
+
 * **v0.1.13** Part 13 - Gearing up
 * **v0.1.12** Part 12 - Increasing Difficulty
 * **v0.1.11** Part 11 - Delving into the Dungeon
