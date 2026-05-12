@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass, field
-from random import randint
-from typing import List, Dict, Tuple
+
+# from random import randint
+from typing import Dict, List, Tuple
 
 from roguelike.colors import Colors
 from roguelike.components.ai import BasicMonster
@@ -13,35 +15,53 @@ from roguelike.components.stairs import Stairs
 from roguelike.entity import Entity
 from roguelike.equipment_slots import EquipmentSlots
 from roguelike.game_messages import Message
-from roguelike.item_functions import (
-    cast_confuse,
-    cast_fireball,
-    cast_lightning,
-    heal,
-)
+from roguelike.item_functions import cast_confuse, cast_fireball, cast_lightning, heal
+from roguelike.monsters import MONSTER_WEIGHTS
 from roguelike.random_utils import from_dungeon_level, random_choice_from_dict
 from roguelike.render_functions import RenderOrder
 
 from .rectangle import Rect
 from .tile import Tile
 
+# ---------------------------------------------------------------------------
+# HELPER FUNCTION
+# ---------------------------------------------------------------------------
+
+
+def weighted_choice(rng, weighted_list):
+    """Return a class chosen from a weighted list of (cls, weight)."""
+    total = sum(weight for _, weight in weighted_list)
+    roll = rng.randint(0, total - 1)
+
+    for monster_cls, weight in weighted_list:
+        if roll < weight:
+            return monster_cls
+        roll -= weight
+
+    return weighted_list[-1][0]
+
 
 # ---------------------------------------------------------------------------
 # GAME MAP
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class GameMap:
     """
     Represents the dungeon map, including tiles, rooms, entities, and generation.
     """
+
     width: int
     height: int
     tiles: List[List[Tile]] = field(default_factory=list)
     dungeon_level: int = 1
+    seed: int = field(default_factory=lambda: random.randint(0, 2**32 - 1))
+    rng: random.Random = field(init=False)
 
     def __post_init__(self):
         self.tiles = self.initialize_tiles()
+        self.rng = random.Random(self.seed)
 
     # ----------------------------------------------------------------------
     # TILE INITIALIZATION
@@ -49,8 +69,7 @@ class GameMap:
     def initialize_tiles(self) -> List[List[Tile]]:
         """Create a fully blocked map."""
         return [
-            [Tile(blocked=True) for _ in range(self.height)]
-            for _ in range(self.width)
+            [Tile(blocked=True) for _ in range(self.height)] for _ in range(self.width)
         ]
 
     # ----------------------------------------------------------------------
@@ -73,10 +92,10 @@ class GameMap:
         last_center: Tuple[int, int] = (0, 0)
 
         for _ in range(max_rooms):
-            w = randint(room_min_size, room_max_size)
-            h = randint(room_min_size, room_max_size)
-            x = randint(0, map_width - w - 1)
-            y = randint(0, map_height - h - 1)
+            w = self.rng.randint(room_min_size, room_max_size)
+            h = self.rng.randint(room_min_size, room_max_size)
+            x = self.rng.randint(0, map_width - w - 1)
+            y = self.rng.randint(0, map_height - h - 1)
 
             new_room = Rect(x, y, w, h)
 
@@ -126,7 +145,7 @@ class GameMap:
 
     def connect_rooms(self, x1: int, y1: int, x2: int, y2: int) -> None:
         """Randomly choose tunnel order."""
-        if randint(0, 1):
+        if self.rng.randint(0, 1):
             self.create_h_tunnel(x1, x2, y1)
             self.create_v_tunnel(y1, y2, x2)
         else:
@@ -148,13 +167,8 @@ class GameMap:
         max_monsters = from_dungeon_level([[2, 1], [3, 4], [5, 6]], self.dungeon_level)
         max_items = from_dungeon_level([[1, 1], [2, 4]], self.dungeon_level)
 
-        num_monsters = randint(0, max_monsters)
-        num_items = randint(0, max_items)
-
-        monster_chances = {
-            "orc": 80,
-            "troll": from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
-        }
+        num_monsters = self.rng.randint(0, max_monsters)
+        num_items = self.rng.randint(0, max_items)
 
         item_chances = {
             "healing_potion": 35,
@@ -169,7 +183,9 @@ class GameMap:
         for _ in range(num_monsters):
             x, y = self.random_room_position(room)
             if not self.is_occupied(x, y, entities):
-                entities.append(self.create_monster(x, y, monster_chances))
+                monster_cls = weighted_choice(self.rng, MONSTER_WEIGHTS)
+                monster = monster_cls(x, y)
+                entities.append(monster)
 
         # Items
         for _ in range(num_items):
@@ -179,45 +195,29 @@ class GameMap:
 
     def random_room_position(self, room: Rect) -> Tuple[int, int]:
         return (
-            randint(room.x1 + 1, room.x2 - 1),
-            randint(room.y1 + 1, room.y2 - 1),
+            self.rng.randint(room.x1 + 1, room.x2 - 1),
+            self.rng.randint(room.y1 + 1, room.y2 - 1),
         )
 
     def is_occupied(self, x: int, y: int, entities: List[Entity]) -> bool:
         return any(e.x == x and e.y == y for e in entities)
 
     # ----------------------------------------------------------------------
-    # MONSTER / ITEM FACTORIES
+    # ITEM FACTORY
     # ----------------------------------------------------------------------
-    def create_monster(self, x: int, y: int, chances: Dict[str, int]) -> Entity:
-        choice = random_choice_from_dict(chances)
-
-        if choice == "orc":
-            fighter = Fighter(hp=20, defense=0, power=4, xp=35)
-            ai = BasicMonster()
-            return Entity(
-                x, y, "o", Colors.desaturated_green, "Orc",
-                blocks=True, render_order=RenderOrder.ACTOR,
-                fighter=fighter, ai=ai
-            )
-
-        # Troll
-        fighter = Fighter(hp=30, defense=2, power=8, xp=100)
-        ai = BasicMonster()
-        return Entity(
-            x, y, "T", Colors.dark_green, "Troll",
-            blocks=True, render_order=RenderOrder.ACTOR,
-            fighter=fighter, ai=ai
-        )
-
     def create_item(self, x: int, y: int, chances: Dict[str, int]) -> Entity:
         choice = random_choice_from_dict(chances)
 
         if choice == "healing_potion":
             item = Item(use_function=heal, amount=40)
             return Entity(
-                x, y, "!", Colors.violet, "Healing Potion",
-                render_order=RenderOrder.ITEM, item=item
+                x,
+                y,
+                "!",
+                Colors.violet,
+                "Healing Potion",
+                render_order=RenderOrder.ITEM,
+                item=item,
             )
 
         if choice == "sword":
@@ -240,8 +240,13 @@ class GameMap:
                 radius=3,
             )
             return Entity(
-                x, y, "#", Colors.red, "Fireball Scroll",
-                render_order=RenderOrder.ITEM, item=item
+                x,
+                y,
+                "#",
+                Colors.red,
+                "Fireball Scroll",
+                render_order=RenderOrder.ITEM,
+                item=item,
             )
 
         if choice == "confusion_scroll":
@@ -254,15 +259,25 @@ class GameMap:
                 ),
             )
             return Entity(
-                x, y, "#", Colors.light_pink, "Confusion Scroll",
-                render_order=RenderOrder.ITEM, item=item
+                x,
+                y,
+                "#",
+                Colors.light_pink,
+                "Confusion Scroll",
+                render_order=RenderOrder.ITEM,
+                item=item,
             )
 
         # Lightning scroll
         item = Item(use_function=cast_lightning, damage=40, maximum_range=5)
         return Entity(
-            x, y, "#", Colors.yellow, "Lightning Scroll",
-            render_order=RenderOrder.ITEM, item=item
+            x,
+            y,
+            "#",
+            Colors.yellow,
+            "Lightning Scroll",
+            render_order=RenderOrder.ITEM,
+            item=item,
         )
 
     # ----------------------------------------------------------------------
@@ -271,7 +286,9 @@ class GameMap:
     def is_blocked(self, x: int, y: int) -> bool:
         return self.tiles[x][y].blocked
 
-    def next_floor(self, player: Entity, message_log, constants) -> Tuple[GameMap, List[Entity]]:
+    def next_floor(
+        self, player: Entity, message_log, constants
+    ) -> Tuple[GameMap, List[Entity]]:
         """
         Advance to the next dungeon floor.
         Returns the new map and the new entity list.
