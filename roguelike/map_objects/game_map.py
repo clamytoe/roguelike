@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from random import randint
-from typing import List, Optional, Dict, Tuple
+from typing import List, Dict, Tuple
 
 from roguelike.colors import Colors
 from roguelike.components.ai import BasicMonster
-from roguelike.components.equipment import Equipment
 from roguelike.components.equippable import Equippable
 from roguelike.components.fighter import Fighter
 from roguelike.components.item import Item
