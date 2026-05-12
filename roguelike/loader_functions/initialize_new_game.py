@@ -8,7 +8,7 @@ from roguelike.components.fighter import Fighter
 from roguelike.components.inventory import Inventory
 from roguelike.components.level import Level
 from roguelike.entity import Entity
-from roguelike.game_messages import MessageLog
+from roguelike.game_messages import Message, MessageLog
 from roguelike.game_states import GameStates
 from roguelike.map_objects.game_map import GameMap
 from roguelike.render_functions import RenderOrder
@@ -103,6 +103,7 @@ def get_game_variables(constants):
     eqp.toggle_equip(dagger)
 
     game_map = GameMap(constants["map_width"], constants["map_height"])
+    print(f"Generated map with seed: {game_map.seed}")
     game_map.make_map(
         constants["max_rooms"],
         constants["room_min_size"],
@@ -115,6 +116,9 @@ def get_game_variables(constants):
 
     message_log = MessageLog(
         constants["message_x"], constants["message_width"], constants["message_height"]
+    )
+    message_log.add_message(
+        Message(f"Dungeon generated with seed {game_map.seed}", Colors.light_grey)
     )
 
     game_state = GameStates.PLAYERS_TURN
