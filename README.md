@@ -75,6 +75,8 @@ If you encounter any problems, please [file an issue](https://github.com/clamyto
 
 ## Changelog
 
+
+* **v0.2.0**Refactor - Cleaned up codebase in order to prepare for a tcodpy and Python upgrade
 * **v0.1.13** Part 13 - Gearing up
 * **v0.1.12** Part 12 - Increasing Difficulty
 * **v0.1.11** Part 11 - Delving into the Dungeon
@@ -91,7 +93,7 @@ If you encounter any problems, please [file an issue](https://github.com/clamyto
 * **v0.1.0** Part 0 - Setting up.
 
 [python-version]:https://img.shields.io/badge/python-3.7.3-brightgreen.svg
-[latest-version]:https://img.shields.io/badge/version-0.1.0-blue.svg
+[latest-version]:https://img.shields.io/badge/version-0.2.0-blue.svg
 [issues-image]:https://img.shields.io/github/issues/clamytoe/roguelike.svg
 [issues-url]:https://github.com/clamytoe/roguelike/issues
 [fork-image]:https://img.shields.io/github/forks/clamytoe/roguelike.svg
