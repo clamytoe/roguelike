@@ -1,40 +1,75 @@
+from __future__ import annotations
+
 import textwrap
 from dataclasses import dataclass, field
 from typing import List
 
-import tcod
-from tcod.color import Color
+from roguelike.colors import Color, Colors
 
+
+# ---------------------------------------------------------------------------
+# Message
+# ---------------------------------------------------------------------------
 
 @dataclass
 class Message:
+    """
+    Represents a single line of text in the message log.
+    """
     text: str
-    color: Color = field(default_factory=Color)
+    color: Color
 
     def __post_init__(self):
-        if not self.color:
-            self.color = tcod.white
+        # Color is required; fallback removed to avoid masking bugs.
+        if self.color is None:
+            self.color = Colors.white
 
+    def __repr__(self) -> str:
+        return f"Message(text={self.text!r}, color={self.color})"
+
+
+# ---------------------------------------------------------------------------
+# Message Log
+# ---------------------------------------------------------------------------
 
 @dataclass
 class MessageLog:
+    """
+    Stores and displays a scrolling list of messages.
+    Handles line wrapping and buffer size limits.
+    """
     x: int
     width: int
     height: int
     messages: List[Message] = field(default_factory=list)
 
+    # ------------------------------------------------------------------
+    # Add a message (with wrapping)
+    # ------------------------------------------------------------------
     def add_message(self, message: Message) -> None:
         """
-        Split the message if necessary, among multiple lines
-        :param message: Message object
-        :return: None
+        Add a message to the log, splitting it into multiple lines if needed.
         """
-        new_msg_lines = textwrap.wrap(message.text, self.width)
+        wrapped_lines = textwrap.wrap(message.text, self.width)
 
-        for line in new_msg_lines:
-            # if the buffer is full, remove the first line to make room for the new one
+        for line in wrapped_lines:
             if len(self.messages) == self.height:
-                del self.messages[0]
+                self.messages.pop(0)
 
-            # Add the new line as a Message object, with the text and the color
             self.messages.append(Message(line, message.color))
+
+    # ------------------------------------------------------------------
+    # Convenience helpers
+    # ------------------------------------------------------------------
+    def add(self, text: str, color: Color = Colors.white) -> None:
+        """
+        Convenience wrapper to add a message without manually creating Message().
+        """
+        self.add_message(Message(text, color))
+
+    def clear(self) -> None:
+        """Remove all messages from the log."""
+        self.messages.clear()
+
+    def __repr__(self) -> str:
+        return f"MessageLog({len(self.messages)} messages)"

@@ -1,98 +1,115 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import List, Union
+from typing import Any, List, Optional, Dict, TYPE_CHECKING
 
-import tcod
-
+from roguelike.colors import Colors
 from roguelike.game_messages import Message
 
-from .item import Item
-
+if TYPE_CHECKING:
+    from roguelike.entity import Entity
 
 @dataclass
 class Inventory:
     capacity: int
-    items: List[Union[Item, list]] = field(default_factory=list)
+    items: List["Entity"] = field(default_factory=list)
+    owner: Optional[Any] = None
 
-    def add_item(self, item):
-        results = []
-
+    # ----------------------------------------------------------------------
+    # ADD ITEM
+    # ----------------------------------------------------------------------
+    def add_item(self, item: "Entity") -> List[Dict[str, Any]]:
         if len(self.items) >= self.capacity:
-            results.append(
-                {
-                    "item_added": None,
-                    "message": Message(
-                        "You cannot carry any more, your inventory is full", tcod.yellow
-                    ),
-                }
-            )
-        else:
-            results.append(
-                {
-                    "item_added": item,
-                    "message": Message(f"You pick up the {item.name}", tcod.blue),
-                }
-            )
+            return [{
+                "item_added": None,
+                "message": Message(
+                    "You cannot carry any more, your inventory is full.",
+                    Colors.yellow,
+                ),
+            }]
 
-            self.items.append(item)
+        self.items.append(item)
+        return [{
+            "item_added": item,
+            "message": Message(f"You pick up the {item.name}.", Colors.blue),
+        }]
 
-        return results
-
-    def use(self, item_entity, **kwargs):
-        results = []
+    # ----------------------------------------------------------------------
+    # USE ITEM
+    # ----------------------------------------------------------------------
+    def use(self, item_entity: "Entity", **kwargs) -> List[Dict[str, Any]]:
+        results: List[Dict[str, Any]] = []
 
         item_component = item_entity.item
+        assert item_component is not None
 
+        # No use function → maybe equippable
         if item_component.use_function is None:
-            equippable_component = item_entity.equippable
-
-            if equippable_component:
-                results.append({"equip": item_entity})
-            else:
-                results.append(
-                    {
-                        "message": Message(
-                            f"The {item_entity.name} cannot be used", tcod.yellow
-                        )
-                    }
+            if item_entity.equippable:
+                return [{"equip": item_entity}]
+            return [{
+                "message": Message(
+                    f"The {item_entity.name} cannot be used.",
+                    Colors.yellow,
                 )
-        else:
-            if item_component.targeting and not (
-                kwargs.get("target_x") or kwargs.get("target_y")
-            ):
-                results.append({"targeting": item_entity})
-            else:
-                kwargs = {**item_component.function_kwargs, **kwargs}
-                item_use_results = item_component.use_function(self.owner, **kwargs)
+            }]
 
-                for item_use_result in item_use_results:
-                    if item_use_result.get("consumed"):
-                        self.remove_item(item_entity)
+        # Targeting required but no target provided
+        if item_component.targeting and not (
+            kwargs.get("target_x") or kwargs.get("target_y")
+        ):
+            return [{"targeting": item_entity}]
 
-                results.extend(item_use_results)
+        # Merge parameters cleanly
+        params = {
+            "amount": item_component.amount,
+            "damage": item_component.damage,
+            "radius": item_component.radius,
+            "maximum_range": item_component.maximum_range,
+            **item_component.function_kwargs,
+            **kwargs,
+        }
 
-        return results
+        # Execute item function
+        item_use_results = item_component.use_function(self.owner, **params)
 
-    def remove_item(self, item):
-        self.items.remove(item)
+        # Remove item if consumed
+        for result in item_use_results:
+            if result.get("consumed"):
+                self.remove_item(item_entity)
 
-    def drop_item(self, item):
-        results = []
+        return item_use_results
 
+    # ----------------------------------------------------------------------
+    # REMOVE ITEM
+    # ----------------------------------------------------------------------
+    def remove_item(self, item: "Entity") -> None:
+        if item in self.items:
+            self.items.remove(item)
+
+    # ----------------------------------------------------------------------
+    # DROP ITEM
+    # ----------------------------------------------------------------------
+    def drop_item(self, item: "Entity") -> List[Dict[str, Any]]:
+        assert self.owner is not None
+        results: List[Dict[str, Any]] = []
+
+        # Unequip if equipped
         if (
             self.owner.equipment.main_hand == item
             or self.owner.equipment.off_hand == item
         ):
             self.owner.equipment.toggle_equip(item)
 
+        # Drop at player's feet
         item.x = self.owner.x
         item.y = self.owner.y
 
         self.remove_item(item)
-        results.append(
-            {
-                "item_dropped": item,
-                "message": Message(f"You dropped the {item.name}", tcod.yellow),
-            }
-        )
+
+        results.append({
+            "item_dropped": item,
+            "message": Message(f"You dropped the {item.name}.", Colors.yellow),
+        })
 
         return results

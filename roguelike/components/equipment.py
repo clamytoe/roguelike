@@ -1,76 +1,101 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 
 from roguelike.equipment_slots import EquipmentSlots
 
-from .equippable import Equippable
+if TYPE_CHECKING:
+    from roguelike.entity import Entity
 
 
 @dataclass
 class Equipment:
-    main_hand: Union[Equippable, None] = None
-    off_hand: Union[Equippable, None] = None
+    """
+    Handles equipping and unequipping items and provides total stat bonuses.
+    """
+    main_hand: Optional[Entity] = None
+    off_hand: Optional[Entity] = None
+    owner: Optional[Entity] = None
+
+    # ----------------------------------------------------------------------
+    # Helpers
+    # ----------------------------------------------------------------------
+    def _equipped_items(self) -> List[Entity]:
+        """Return a list of all currently equipped item entities."""
+        items = []
+        if self.main_hand:
+            items.append(self.main_hand)
+        if self.off_hand:
+            items.append(self.off_hand)
+        return items
+
+    # ----------------------------------------------------------------------
+    # Bonus properties
+    # ----------------------------------------------------------------------
+    @property
+    def max_hp_bonus(self) -> int:
+        return sum(
+            item.equippable.max_hp_bonus
+            for item in self._equipped_items()
+            if item.equippable
+        )
 
     @property
-    def max_hp_bonus(self):
-        bonus = 0
-
-        if self.main_hand and self.main_hand.equippable:
-            bonus += self.main_hand.equippable.max_hp_bonus
-
-        if self.off_hand and self.off_hand.equippable:
-            bonus += self.off_hand.equippable.max_hp_bonus
-
-        return bonus
+    def defense_bonus(self) -> int:
+        return sum(
+            item.equippable.defense_bonus
+            for item in self._equipped_items()
+            if item.equippable
+        )
 
     @property
-    def defense_bonus(self):
-        bonus = 0
+    def power_bonus(self) -> int:
+        return sum(
+            item.equippable.power_bonus
+            for item in self._equipped_items()
+            if item.equippable
+        )
 
-        if self.main_hand and self.main_hand.equippable:
-            bonus += self.main_hand.equippable.defense_bonus
+    # ----------------------------------------------------------------------
+    # Equip / Unequip
+    # ----------------------------------------------------------------------
+    def toggle_equip(self, item_entity: Entity) -> List[Dict[str, Any]]:
+        """
+        Equip or unequip an item. Returns a list of results for the message log.
+        """
+        eqp = item_entity.equippable
+        assert eqp is not None
 
-        if self.off_hand and self.off_hand.equippable:
-            bonus += self.off_hand.equippable.defense_bonus
+        results: List[Dict[str, Any]] = []
+        slot = eqp.slot
 
-        return bonus
-
-    @property
-    def power_bonus(self):
-        bonus = 0
-
-        if self.main_hand and self.main_hand.equippable:
-            bonus += self.main_hand.equippable.power_bonus
-
-        if self.off_hand and self.off_hand.equippable:
-            bonus += self.off_hand.equippable.power_bonus
-
-        return bonus
-
-    def toggle_equip(self, equippable_entity):
-        results = []
-
-        slot = equippable_entity.equippable.slot
-
+        # MAIN HAND
         if slot == EquipmentSlots.MAIN_HAND:
-            if self.main_hand == equippable_entity:
+            if self.main_hand is item_entity:
                 self.main_hand = None
-                results.append({"dequipped": equippable_entity})
-            else:
-                if self.main_hand:
-                    results.append({"dequipped": self.main_hand})
+                results.append({"dequipped": item_entity})
+                return results
 
-                self.main_hand = equippable_entity
-                results.append({"equipped": equippable_entity})
-        elif slot == EquipmentSlots.OFF_HAND:
-            if self.off_hand == equippable_entity:
+            if self.main_hand:
+                results.append({"dequipped": self.main_hand})
+
+            self.main_hand = item_entity
+            results.append({"equipped": item_entity})
+            return results
+
+        # OFF HAND
+        if slot == EquipmentSlots.OFF_HAND:
+            if self.off_hand is item_entity:
                 self.off_hand = None
-                results.append({"dequipped": equippable_entity})
-            else:
-                if self.off_hand:
-                    results.append({"dequipped": self.off_hand})
+                results.append({"dequipped": item_entity})
+                return results
 
-                self.off_hand = equippable_entity
-                results.append({"equipped": equippable_entity})
+            if self.off_hand:
+                results.append({"dequipped": self.off_hand})
+
+            self.off_hand = item_entity
+            results.append({"equipped": item_entity})
+            return results
 
         return results

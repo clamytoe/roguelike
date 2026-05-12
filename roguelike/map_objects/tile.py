@@ -1,20 +1,24 @@
+from __future__ import annotations
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional
 
 
 @dataclass
 class Tile:
     """
-    A tile on a map.
+    A tile on the map.
 
-    It may or may not be blocked, and may or may not block sight.
+    - `blocked`: whether movement is blocked.
+    - `block_sight`: whether the tile blocks line of sight.
+      If None, it defaults to the same value as `blocked`.
+    - `explored`: whether the player has seen this tile before.
     """
 
     blocked: bool
-    block_sight: Union[bool, None] = None
+    block_sight: Optional[bool] = None
     explored: bool = False
 
-    def __post_init__(self):
-        self.block_sight = (
-            self.blocked if self.block_sight is None else self.block_sight
-        )
+    def __post_init__(self) -> None:
+        # If block_sight is not explicitly set, match it to `blocked`.
+        if self.block_sight is None:
+            self.block_sight = self.blocked

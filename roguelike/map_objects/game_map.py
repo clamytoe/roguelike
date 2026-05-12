@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from random import randint
-from typing import List
+from typing import List, Optional, Dict, Tuple
 
-import tcod
-
+from roguelike.colors import Colors
 from roguelike.components.ai import BasicMonster
 from roguelike.components.equipment import Equipment
 from roguelike.components.equippable import Equippable
@@ -13,7 +14,12 @@ from roguelike.components.stairs import Stairs
 from roguelike.entity import Entity
 from roguelike.equipment_slots import EquipmentSlots
 from roguelike.game_messages import Message
-from roguelike.item_functions import cast_confuse, cast_fireball, cast_lightning, heal
+from roguelike.item_functions import (
+    cast_confuse,
+    cast_fireball,
+    cast_lightning,
+    heal,
+)
 from roguelike.random_utils import from_dungeon_level, random_choice_from_dict
 from roguelike.render_functions import RenderOrder
 
@@ -21,8 +27,15 @@ from .rectangle import Rect
 from .tile import Tile
 
 
+# ---------------------------------------------------------------------------
+# GAME MAP
+# ---------------------------------------------------------------------------
+
 @dataclass
 class GameMap:
+    """
+    Represents the dungeon map, including tiles, rooms, entities, and generation.
+    """
     width: int
     height: int
     tiles: List[List[Tile]] = field(default_factory=list)
@@ -31,132 +44,119 @@ class GameMap:
     def __post_init__(self):
         self.tiles = self.initialize_tiles()
 
-    def initialize_tiles(self):
-        tiles = [[Tile(True) for _ in range(self.height)] for _ in range(self.width)]
+    # ----------------------------------------------------------------------
+    # TILE INITIALIZATION
+    # ----------------------------------------------------------------------
+    def initialize_tiles(self) -> List[List[Tile]]:
+        """Create a fully blocked map."""
+        return [
+            [Tile(blocked=True) for _ in range(self.height)]
+            for _ in range(self.width)
+        ]
 
-        return tiles
-
+    # ----------------------------------------------------------------------
+    # MAP GENERATION
+    # ----------------------------------------------------------------------
     def make_map(
         self,
-        max_rooms,
-        room_min_size,
-        room_max_size,
-        map_width,
-        map_height,
-        player,
-        entities,
-    ):
-        rooms = []
-        num_rooms = 0
+        max_rooms: int,
+        room_min_size: int,
+        room_max_size: int,
+        map_width: int,
+        map_height: int,
+        player: Entity,
+        entities: List[Entity],
+    ) -> None:
+        """
+        Generate a new dungeon layout using the classic room-and-corridor algorithm.
+        """
+        rooms: List[Rect] = []
+        last_center: Tuple[int, int] = (0, 0)
 
-        center_of_last_room_x = None
-        center_of_last_room_y = None
-
-        for r in range(max_rooms):
-            # random width and height
+        for _ in range(max_rooms):
             w = randint(room_min_size, room_max_size)
             h = randint(room_min_size, room_max_size)
-            # random position without going out of the boundaries of the map
             x = randint(0, map_width - w - 1)
             y = randint(0, map_height - h - 1)
 
-            # "Rect" class makes rectangles easier to work with
             new_room = Rect(x, y, w, h)
 
-            # run through the other rooms and see if they intersect with this one
-            for other_room in rooms:
-                if new_room.intersect(other_room):
-                    break
+            if any(new_room.intersect(other) for other in rooms):
+                continue
+
+            # Carve room
+            self.create_room(new_room)
+            new_x, new_y = new_room.center()
+
+            if not rooms:
+                player.x, player.y = new_x, new_y
             else:
-                # this means there are no intersections, so this room is valid
+                prev_x, prev_y = rooms[-1].center()
+                self.connect_rooms(prev_x, prev_y, new_x, new_y)
 
-                # "paint" it to the map's tiles
-                self.create_room(new_room)
+            self.place_entities(new_room, entities)
 
-                # center coordinates of new room, will be useful later
-                new_x, new_y = new_room.center()
+            rooms.append(new_room)
+            last_center = (new_x, new_y)
 
-                center_of_last_room_x = new_x
-                center_of_last_room_y = new_y
-
-                if num_rooms == 0:
-                    # this is the first room, where the player starts at
-                    player.x = new_x
-                    player.y = new_y
-                else:
-                    # all rooms after the first:
-                    # connect it to the previous room with a tunnel
-
-                    # center coordinates of previous room
-                    prev_x, prev_y = rooms[num_rooms - 1].center()
-
-                    # flip a coin (random number that is either 0 or 1)
-                    if randint(0, 1) == 1:
-                        # first move horizontally, then vertically
-                        self.create_h_tunnel(prev_x, new_x, prev_y)
-                        self.create_v_tunnel(prev_y, new_y, new_x)
-                    else:
-                        # first move vertically, then horizontally
-                        self.create_v_tunnel(prev_y, new_y, prev_x)
-                        self.create_h_tunnel(prev_x, new_x, new_y)
-
-                self.place_entities(new_room, entities)
-
-                # finally, append the new room to the list
-                rooms.append(new_room)
-                num_rooms += 1
-
+        # Place stairs in last room
         stairs_component = Stairs(self.dungeon_level + 1)
-        down_stairs = Entity(
-            center_of_last_room_x,
-            center_of_last_room_y,
+        stairs = Entity(
+            last_center[0],
+            last_center[1],
             ">",
-            tcod.white,
+            Colors.white,
             "Stairs",
             render_order=RenderOrder.STAIRS,
             stairs=stairs_component,
         )
-        entities.append(down_stairs)
+        entities.append(stairs)
 
-    def create_room(self, room):
-        # go through the tiles in the rectangle and make them passable
+    # ----------------------------------------------------------------------
+    # ROOM / TUNNEL CREATION
+    # ----------------------------------------------------------------------
+    def carve(self, x: int, y: int) -> None:
+        """Mark a tile as walkable and transparent."""
+        self.tiles[x][y].blocked = False
+        self.tiles[x][y].block_sight = False
+
+    def create_room(self, room: Rect) -> None:
         for x in range(room.x1 + 1, room.x2):
             for y in range(room.y1 + 1, room.y2):
-                self.tiles[x][y].blocked = False
-                self.tiles[x][y].block_sight = False
+                self.carve(x, y)
 
-    def create_h_tunnel(self, x1, x2, y):
+    def connect_rooms(self, x1: int, y1: int, x2: int, y2: int) -> None:
+        """Randomly choose tunnel order."""
+        if randint(0, 1):
+            self.create_h_tunnel(x1, x2, y1)
+            self.create_v_tunnel(y1, y2, x2)
+        else:
+            self.create_v_tunnel(y1, y2, x1)
+            self.create_h_tunnel(x1, x2, y2)
+
+    def create_h_tunnel(self, x1: int, x2: int, y: int) -> None:
         for x in range(min(x1, x2), max(x1, x2) + 1):
-            self.tiles[x][y].blocked = False
-            self.tiles[x][y].block_sight = False
+            self.carve(x, y)
 
-    def create_v_tunnel(self, y1, y2, x):
+    def create_v_tunnel(self, y1: int, y2: int, x: int) -> None:
         for y in range(min(y1, y2), max(y1, y2) + 1):
-            self.tiles[x][y].blocked = False
-            self.tiles[x][y].block_sight = False
+            self.carve(x, y)
 
-    def place_entities(self, room, entities):
-        """
-        Places entities on the map
-        :param room: The room to place the entity into
-        :param entities: The entities to place
-        :return: None
-        """
-        max_monsters_per_room = from_dungeon_level(
-            [[2, 1], [3, 4], [5, 6]], self.dungeon_level
-        )
-        max_items_per_room = from_dungeon_level([[1, 1], [2, 4]], self.dungeon_level)
+    # ----------------------------------------------------------------------
+    # ENTITY PLACEMENT
+    # ----------------------------------------------------------------------
+    def place_entities(self, room: Rect, entities: List[Entity]) -> None:
+        max_monsters = from_dungeon_level([[2, 1], [3, 4], [5, 6]], self.dungeon_level)
+        max_items = from_dungeon_level([[1, 1], [2, 4]], self.dungeon_level)
 
-        # Get a random number of monsters
-        number_of_monsters = randint(0, max_monsters_per_room)
-        number_of_items = randint(0, max_items_per_room)
+        num_monsters = randint(0, max_monsters)
+        num_items = randint(0, max_items)
 
         monster_chances = {
             "orc": 80,
-            "troll": from_dungeon_level(
-                [[15, 3], [30, 5], [60, 7]], self.dungeon_level
-            ),
+            "troll": from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
         }
+
         item_chances = {
             "healing_potion": 35,
             "sword": from_dungeon_level([[5, 4]], self.dungeon_level),
@@ -166,147 +166,117 @@ class GameMap:
             "confusion_scroll": from_dungeon_level([[10, 2]], self.dungeon_level),
         }
 
-        for i in range(number_of_monsters):
-            # Choose a random location in the room
-            x = randint(room.x1 + 1, room.x2 - 1)
-            y = randint(room.y1 + 1, room.y2 - 1)
+        # Monsters
+        for _ in range(num_monsters):
+            x, y = self.random_room_position(room)
+            if not self.is_occupied(x, y, entities):
+                entities.append(self.create_monster(x, y, monster_chances))
 
-            if not any(
-                [entity for entity in entities if entity.x == x and entity.y == y]
-            ):
-                monster_choice = random_choice_from_dict(monster_chances)
+        # Items
+        for _ in range(num_items):
+            x, y = self.random_room_position(room)
+            if not self.is_occupied(x, y, entities):
+                entities.append(self.create_item(x, y, item_chances))
 
-                if monster_choice == "orc":
-                    fighter_component = Fighter(hp=20, defense=0, power=4, xp=35)
-                    ai_component = BasicMonster()
-                    monster = Entity(
-                        x,
-                        y,
-                        "o",
-                        tcod.desaturated_green,
-                        "Orc",
-                        blocks=True,
-                        render_order=RenderOrder.ACTOR,
-                        fighter=fighter_component,
-                        ai=ai_component,
-                    )
-                else:
-                    fighter_component = Fighter(hp=30, defense=2, power=8, xp=100)
-                    ai_component = BasicMonster()
-                    monster = Entity(
-                        x,
-                        y,
-                        "T",
-                        tcod.darker_green,
-                        "Troll",
-                        blocks=True,
-                        render_order=RenderOrder.ACTOR,
-                        fighter=fighter_component,
-                        ai=ai_component,
-                    )
+    def random_room_position(self, room: Rect) -> Tuple[int, int]:
+        return (
+            randint(room.x1 + 1, room.x2 - 1),
+            randint(room.y1 + 1, room.y2 - 1),
+        )
 
-                entities.append(monster)
+    def is_occupied(self, x: int, y: int, entities: List[Entity]) -> bool:
+        return any(e.x == x and e.y == y for e in entities)
 
-        for i in range(number_of_items):
-            x = randint(room.x1 + 1, room.x2 - 1)
-            y = randint(room.y1 + 1, room.y2 - 1)
+    # ----------------------------------------------------------------------
+    # MONSTER / ITEM FACTORIES
+    # ----------------------------------------------------------------------
+    def create_monster(self, x: int, y: int, chances: Dict[str, int]) -> Entity:
+        choice = random_choice_from_dict(chances)
 
-            if not any(
-                [entity for entity in entities if entity.x == x and entity.y == y]
-            ):
-                item_choice = random_choice_from_dict(item_chances)
+        if choice == "orc":
+            fighter = Fighter(hp=20, defense=0, power=4, xp=35)
+            ai = BasicMonster()
+            return Entity(
+                x, y, "o", Colors.desaturated_green, "Orc",
+                blocks=True, render_order=RenderOrder.ACTOR,
+                fighter=fighter, ai=ai
+            )
 
-                if item_choice == "healing_potion":
-                    item_component = Item(use_function=heal, amount=40)
-                    item = Entity(
-                        x,
-                        y,
-                        "!",
-                        tcod.violet,
-                        "Healing Potion",
-                        render_order=RenderOrder.ITEM,
-                        item=item_component,
-                    )
-                elif item_choice == "sword":
-                    equippable_component = Equippable(
-                        EquipmentSlots.MAIN_HAND, power_bonus=3
-                    )
-                    item = Entity(
-                        x, y, "/", tcod.sky, "Sword", equippable=equippable_component
-                    )
-                elif item_choice == "shield":
-                    equippable_component = Equippable(
-                        EquipmentSlots.OFF_HAND, defense_bonus=1
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "[",
-                        tcod.darker_orange,
-                        "Shield",
-                        equippable=equippable_component,
-                    )
-                elif item_choice == "fireball_scroll":
-                    item_component = Item(
-                        use_function=cast_fireball,
-                        targeting=True,
-                        targeting_message=Message(
-                            "Left-click a target tile for the fireball, or right-click to cancel",
-                            tcod.light_cyan,
-                        ),
-                        damage=25,
-                        radius=3,
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "#",
-                        tcod.red,
-                        "Fireball scroll",
-                        render_order=RenderOrder.ITEM,
-                        item=item_component,
-                    )
-                elif item_choice == "confusion_scroll":
-                    item_component = Item(
-                        use_function=cast_confuse,
-                        targeting=True,
-                        targeting_message=Message(
-                            "Left-click an enemy to confuse it, or right-click to cancel.",
-                            tcod.light_cyan,
-                        ),
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "#",
-                        tcod.light_pink,
-                        "Confusion Scroll",
-                        render_order=RenderOrder.ITEM,
-                        item=item_component,
-                    )
-                else:
-                    item_component = Item(
-                        use_function=cast_lightning, damage=40, maximum_range=5
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "#",
-                        tcod.yellow,
-                        "Lightning Scroll",
-                        render_order=RenderOrder.ITEM,
-                        item=item_component,
-                    )
+        # Troll
+        fighter = Fighter(hp=30, defense=2, power=8, xp=100)
+        ai = BasicMonster()
+        return Entity(
+            x, y, "T", Colors.dark_green, "Troll",
+            blocks=True, render_order=RenderOrder.ACTOR,
+            fighter=fighter, ai=ai
+        )
 
-                entities.append(item)
+    def create_item(self, x: int, y: int, chances: Dict[str, int]) -> Entity:
+        choice = random_choice_from_dict(chances)
 
-    def is_blocked(self, x, y):
-        if self.tiles[x][y].blocked:
-            return True
+        if choice == "healing_potion":
+            item = Item(use_function=heal, amount=40)
+            return Entity(
+                x, y, "!", Colors.violet, "Healing Potion",
+                render_order=RenderOrder.ITEM, item=item
+            )
 
-        return False
+        if choice == "sword":
+            eq = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=3)
+            return Entity(x, y, "/", Colors.sky, "Sword", equippable=eq)
 
-    def next_floor(self, player, message_log, constants):
+        if choice == "shield":
+            eq = Equippable(EquipmentSlots.OFF_HAND, defense_bonus=1)
+            return Entity(x, y, "[", Colors.dark_orange, "Shield", equippable=eq)
+
+        if choice == "fireball_scroll":
+            item = Item(
+                use_function=cast_fireball,
+                targeting=True,
+                targeting_message=Message(
+                    "Left-click a target tile for the fireball, or right-click to cancel",
+                    Colors.light_cyan,
+                ),
+                damage=25,
+                radius=3,
+            )
+            return Entity(
+                x, y, "#", Colors.red, "Fireball Scroll",
+                render_order=RenderOrder.ITEM, item=item
+            )
+
+        if choice == "confusion_scroll":
+            item = Item(
+                use_function=cast_confuse,
+                targeting=True,
+                targeting_message=Message(
+                    "Left-click an enemy to confuse it, or right-click to cancel.",
+                    Colors.light_cyan,
+                ),
+            )
+            return Entity(
+                x, y, "#", Colors.light_pink, "Confusion Scroll",
+                render_order=RenderOrder.ITEM, item=item
+            )
+
+        # Lightning scroll
+        item = Item(use_function=cast_lightning, damage=40, maximum_range=5)
+        return Entity(
+            x, y, "#", Colors.yellow, "Lightning Scroll",
+            render_order=RenderOrder.ITEM, item=item
+        )
+
+    # ----------------------------------------------------------------------
+    # BLOCKING / NEXT FLOOR
+    # ----------------------------------------------------------------------
+    def is_blocked(self, x: int, y: int) -> bool:
+        return self.tiles[x][y].blocked
+
+    def next_floor(self, player: Entity, message_log, constants) -> Tuple[GameMap, List[Entity]]:
+        """
+        Advance to the next dungeon floor.
+        Returns the new map and the new entity list.
+        """
         self.dungeon_level += 1
         entities = [player]
 
@@ -321,13 +291,15 @@ class GameMap:
             entities,
         )
 
-        player.fighter.heal(player.fighter.max_hp // 2)
+        # Heal player to full
+        assert player.fighter is not None
+        player.fighter.hp = player.fighter.max_hp
 
         message_log.add_message(
             Message(
                 "You take a moment to rest, and recover your strength.",
-                tcod.light_violet,
+                Colors.light_violet,
             )
         )
 
-        return entities
+        return self, entities

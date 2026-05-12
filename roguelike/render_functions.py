@@ -1,7 +1,13 @@
+from __future__ import annotations
+
+import math
 from enum import Enum, auto
+from typing import cast, Tuple
 
-import tcod
+from tcod import libtcodpy
+from tcod.console import Console
 
+from roguelike.colors import Colors
 from roguelike.menus import character_screen, inventory_menu, level_up_menu
 
 from .game_states import GameStates
@@ -12,39 +18,61 @@ class RenderOrder(Enum):
     CORPSE = auto()
     ITEM = auto()
     ACTOR = auto()
+    PLAYER = auto()
 
 
-def get_names_under_mouse(mouse, entities, fov_map):
-    x, y = (mouse.cx, mouse.cy)
+def get_names_under_mouse(mouse, entities, fov_map) -> str:
+    """Return a comma-separated list of entity names under the mouse cursor."""
+    x, y = mouse.cx, mouse.cy
 
     names = [
         entity.name
         for entity in entities
         if entity.x == x
         and entity.y == y
-        and tcod.map_is_in_fov(fov_map, entity.x, entity.y)
+        and libtcodpy.map_is_in_fov(fov_map, entity.x, entity.y)
     ]
-    names = ", ".join(names)
 
-    return names.capitalize()
+    return ", ".join(names).title()
 
 
-def render_bar(panel, x, y, total_width, name, value, maximum, bar_color, back_color):
+def lerp(a, b, t):
+    """Linear interpolation between two RGB colors."""
+    return (
+        int(a[0] + (b[0] - a[0]) * t),
+        int(a[1] + (b[1] - a[1]) * t),
+        int(a[2] + (b[2] - a[2]) * t),
+    )
+
+
+def render_bar(
+    panel,
+    x: int,
+    y: int,
+    total_width: int,
+    name: str,
+    value: int,
+    maximum: int,
+    bar_color: Tuple[int, int, int],
+    back_color: Tuple[int, int, int],
+) -> None:
+    """Render a horizontal bar (HP, XP, etc.)."""
     bar_width = int(float(value) / maximum * total_width)
 
-    tcod.console_set_default_background(panel, back_color)
-    tcod.console_rect(panel, x, y, total_width, 1, False, tcod.BKGND_SCREEN)
-    tcod.console_set_default_background(panel, bar_color)
-    if bar_width > 0:
-        tcod.console_rect(panel, x, y, bar_width, 1, False, tcod.BKGND_SCREEN)
+    libtcodpy.console_set_default_background(panel, back_color)
+    libtcodpy.console_rect(panel, x, y, total_width, 1, False, libtcodpy.BKGND_SCREEN)
 
-    tcod.console_set_default_foreground(panel, tcod.white)
-    tcod.console_print_ex(
+    libtcodpy.console_set_default_background(panel, bar_color)
+    if bar_width > 0:
+        libtcodpy.console_rect(panel, x, y, bar_width, 1, False, libtcodpy.BKGND_SCREEN)
+
+    libtcodpy.console_set_default_foreground(panel, Colors.white)
+    libtcodpy.console_print_ex(
         panel,
-        int(x + total_width / 2),
+        x + total_width // 2,
         y,
-        tcod.BKGND_NONE,
-        tcod.CENTER,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.CENTER,
         f"{name}: {value}/{maximum}",
     )
 
@@ -56,84 +84,66 @@ def render_all(
     player,
     game_map,
     fov_map,
-    fov_recompute,
+    fov_recompute: bool,
     message_log,
-    screen_width,
-    screen_height,
-    bar_width,
-    panel_height,
-    panel_y,
+    screen_width: int,
+    screen_height: int,
+    bar_width: int,
+    panel_height: int,
+    panel_y: int,
     mouse,
     colors,
-    game_state,
-):
-    """
-    Dra all entities in the list
-    :param con: Console window to draw on
-    :param panel: Console window for the stats information
-    :param entities: List of entities to draw
-    :param player: Player character class
-    :param game_map: GameMap object
-    :param fov_map: Field of View map
-    :param fov_recompute: Boolean flag to determine if FOV should be recomputed
-    :param message_log: MessageLog object with Messages
-    :param screen_width: Width of the screen
-    :param screen_height: Height of the screen
-    :param bar_width: Width of the health bar
-    :param panel_height: Height of the panel
-    :param panel_y: Placement of the panel with respect to the main console window
-    :param mouse: Mouse pointer object
-    :param colors: GameMap color values
-    :param game_state: GameState
-    :return: None
-    """
-    # Draw all the tiles in the game map
+    game_state: GameStates,
+    radius: int,
+) -> None:
+    """Draw the entire game state: map, entities, UI, messages, menus."""
+    # Draw map tiles
     if fov_recompute:
         for y in range(game_map.height):
             for x in range(game_map.width):
-                visible = tcod.map_is_in_fov(fov_map, x, y)
+                visible = libtcodpy.map_is_in_fov(fov_map, x, y)
                 wall = game_map.tiles[x][y].block_sight
 
                 if visible:
-                    if wall:
-                        tcod.console_set_char_background(
-                            con, x, y, colors.get("light_wall"), tcod.BKGND_SET
-                        )
-                    else:
-                        tcod.console_set_char_background(
-                            con, x, y, colors.get("light_ground"), tcod.BKGND_SET
-                        )
+                    distance = math.hypot(x - player.x, y - player.y)
+                    fade = max(0.0, 1.0 - distance / radius)
 
+                    base = colors.light_wall if wall else colors.light_ground
+                    dark = colors.dark_wall if wall else colors.dark_ground
+
+                    bg = lerp(dark, base, fade)
                     game_map.tiles[x][y].explored = True
+
                 elif game_map.tiles[x][y].explored:
-                    if wall:
-                        tcod.console_set_char_background(
-                            con, x, y, colors.get("dark_wall"), tcod.BKGND_SET
-                        )
-                    else:
-                        tcod.console_set_char_background(
-                            con, x, y, colors.get("dark_ground"), tcod.BKGND_SET
-                        )
+                    bg = colors.dark_wall if wall else colors.dark_ground
 
-    # Draw all entities in the list
-    entities_in_render_order = sorted(entities, key=lambda e: e.render_order.value)
+                else:
+                    continue
 
-    for entity in entities_in_render_order:
+                libtcodpy.console_set_char_background(con, x, y, bg, libtcodpy.BKGND_SET)
+
+    # Draw entities
+    entities_sorted = sorted(entities, key=lambda e: e.render_order.value)
+    for entity in entities_sorted:
         draw_entity(con, entity, fov_map, game_map)
 
-    tcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
-    tcod.console_set_default_background(panel, tcod.black)
-    tcod.console_clear(panel)
+    # Blit main console
+    libtcodpy.console_blit(con, 0, 0, screen_width, screen_height, cast(Console, 0), 0, 0)
 
-    # Print the game messages, one line at a time
+    # Draw UI panel
+    libtcodpy.console_set_default_background(panel, Colors.black)
+    libtcodpy.console_clear(panel)
+
+    # Messages
     y = 1
     for message in message_log.messages:
-        tcod.console_set_default_foreground(panel, message.color)
-        tcod.console_print_ex(
-            panel, message_log.x, y, tcod.BKGND_NONE, tcod.LEFT, message.text
+        libtcodpy.console_set_default_foreground(panel, message.color)
+        libtcodpy.console_print_ex(
+            panel, message_log.x, y, libtcodpy.BKGND_NONE, libtcodpy.LEFT, message.text
         )
         y += 1
 
+    # HP bar
     render_bar(
         panel,
         1,
@@ -142,42 +152,55 @@ def render_all(
         "HP",
         player.fighter.hp,
         player.fighter.max_hp,
-        tcod.light_red,
-        tcod.darker_red,
+        Colors.light_red,
+        Colors.dark_red,
     )
 
-    tcod.console_print_ex(
+    # Dungeon level
+    libtcodpy.console_set_default_foreground(panel, Colors.light_grey)
+    libtcodpy.console_print_ex(
         panel,
         1,
         3,
-        tcod.BKGND_NONE,
-        tcod.LEFT,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.LEFT,
         f"Dungeon level: {game_map.dungeon_level}",
     )
 
-    tcod.console_set_default_foreground(panel, tcod.light_gray)
-    tcod.console_print_ex(
+    # Mouse hover names
+    libtcodpy.console_print_ex(
         panel,
         1,
         0,
-        tcod.BKGND_NONE,
-        tcod.LEFT,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.LEFT,
         get_names_under_mouse(mouse, entities, fov_map),
     )
 
-    tcod.console_blit(panel, 0, 0, screen_width, panel_height, 0, 0, panel_y)
+    # Blit panel
+    libtcodpy.console_blit(
+        panel,
+        0,
+        0,
+        screen_width,
+        panel_height,
+        cast(Console, 0),
+        0,
+        panel_y,   # ← correct destination Y
+        1.0,
+        1.0,
+    )
 
+
+    # Menus
     if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
-        if game_state == GameStates.SHOW_INVENTORY:
-            inventory_title = (
-                "Press the key next to an item to use it, or ESC to cancel.\n"
-            )
-        else:
-            inventory_title = (
-                "Press the key next to an item to drop it, or ESC to cancel.\n"
-            )
+        title = (
+            "Press the key next to an item to use it, or ESC to cancel.\n"
+            if game_state == GameStates.SHOW_INVENTORY
+            else "Press the key next to an item to drop it, or ESC to cancel.\n"
+        )
+        inventory_menu(con, title, player, 50, screen_width, screen_height)
 
-        inventory_menu(con, inventory_title, player, 50, screen_width, screen_height)
     elif game_state == GameStates.LEVEL_UP:
         level_up_menu(
             con,
@@ -187,42 +210,28 @@ def render_all(
             screen_width,
             screen_height,
         )
+
     elif game_state == GameStates.CHARACTER_SCREEN:
         character_screen(player, 30, 10, screen_width, screen_height)
 
 
-def clear_all(con, entities):
-    """
-    Loops over all entities passed and clears them from the screen
-    :param con: Console window
-    :param entities: List of entities to clear
-    :return: None
-    """
+def clear_all(con, entities) -> None:
+    """Clear all entities from the console."""
     for entity in entities:
         clear_entity(con, entity)
 
 
-def draw_entity(con, entity, fov_map, game_map):
-    """
-    Draw an entity on the screen
-    :param con: Console window
-    :param entity: Entity object to draw
-    :param fov_map: Field of View map
-    :param game_map: GameMap object
-    :return:
-    """
-    if tcod.map_is_in_fov(fov_map, entity.x, entity.y) or (
+def draw_entity(con, entity, fov_map, game_map) -> None:
+    """Draw a single entity if visible or if stairs on explored tile."""
+    if libtcodpy.map_is_in_fov(fov_map, entity.x, entity.y) or (
         entity.stairs and game_map.tiles[entity.x][entity.y].explored
     ):
-        tcod.console_set_default_foreground(con, entity.color)
-        tcod.console_put_char(con, entity.x, entity.y, entity.char, tcod.BKGND_NONE)
+        libtcodpy.console_set_default_foreground(con, entity.color)
+        libtcodpy.console_put_char(
+            con, entity.x, entity.y, entity.char, libtcodpy.BKGND_NONE
+        )
 
 
-def clear_entity(con, entity):
-    """
-    erase the character that represents this object
-    :param con: Console window
-    :param entity: Entity object
-    :return: None
-    """
-    tcod.console_put_char(con, entity.x, entity.y, " ", tcod.BKGND_NONE)
+def clear_entity(con, entity) -> None:
+    """Erase the character representing this entity."""
+    libtcodpy.console_put_char(con, entity.x, entity.y, " ", libtcodpy.BKGND_NONE)

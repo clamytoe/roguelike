@@ -108,3 +108,6 @@ ENV/
 
 # game save files
 save_game.*
+
+# VS Code
+.vscode/

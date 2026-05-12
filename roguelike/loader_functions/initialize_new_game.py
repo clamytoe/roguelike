@@ -1,5 +1,6 @@
-import tcod
+from tcod import libtcodpy
 
+from roguelike.colors import Colors
 from roguelike.components.equipment import Equipment
 from roguelike.equipment_slots import EquipmentSlots
 from roguelike.components.equippable import Equippable
@@ -20,7 +21,7 @@ def get_constants():
     screen_height = 50
 
     full_screen = False
-    renderer = tcod.RENDERER_SDL2
+    renderer = libtcodpy.RENDERER_SDL2
 
     bar_width = 20
     panel_height = 7
@@ -44,13 +45,6 @@ def get_constants():
     max_monsters_per_room = 3
     max_items_per_room = 2
 
-    colors = {
-        "dark_wall": tcod.Color(0, 0, 100),
-        "dark_ground": tcod.Color(50, 50, 150),
-        "light_wall": tcod.Color(130, 110, 50),
-        "light_ground": tcod.Color(200, 180, 50),
-    }
-
     constants = {
         "window_title": window_title,
         "screen_width": screen_width,
@@ -73,7 +67,7 @@ def get_constants():
         "fov_radius": fov_radius,
         "max_monsters_per_room": max_monsters_per_room,
         "max_items_per_room": max_items_per_room,
-        "colors": colors,
+        "colors": Colors,
     }
 
     return constants
@@ -88,7 +82,7 @@ def get_game_variables(constants):
         0,
         0,
         "@",
-        tcod.white,
+        Colors.white,
         "Player",
         blocks=True,
         render_order=RenderOrder.ACTOR,
@@ -100,9 +94,13 @@ def get_game_variables(constants):
     entities = [player]
 
     equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2)
-    dagger = Entity(0, 0, "-", tcod.sky, "Dagger", equippable=equippable_component)
-    player.inventory.add_item(dagger)
-    player.equipment.toggle_equip(dagger)
+    dagger = Entity(0, 0, "-", Colors.sky, "Dagger", equippable=equippable_component)
+    inv = player.inventory
+    eqp = player.equipment
+    assert inv is not None
+    assert eqp is not None
+    inv.add_item(dagger)
+    eqp.toggle_equip(dagger)
 
     game_map = GameMap(constants["map_width"], constants["map_height"])
     game_map.make_map(
