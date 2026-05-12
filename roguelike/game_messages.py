@@ -49,7 +49,7 @@ class MessageLog:
     def add_message(self, message: Message) -> None:
         """
         Add a message to the log, splitting it into multiple lines if needed.
-        """
+        """            
         wrapped_lines = textwrap.wrap(message.text, self.width)
 
         for line in wrapped_lines:
