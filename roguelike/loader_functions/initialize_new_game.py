@@ -90,6 +90,7 @@ def get_game_variables(constants):
         inventory=inventory_component,
         level=level_component,
         equipment=equipment_component,
+        is_player=True,
     )
     entities = [player]
 

@@ -15,19 +15,19 @@ from roguelike.components.stairs import Stairs
 from roguelike.entity import Entity
 from roguelike.equipment_slots import EquipmentSlots
 from roguelike.game_messages import Message
-from roguelike.item_functions import cast_confuse, cast_fireball, cast_lightning, heal
-from roguelike.monsters import MONSTER_WEIGHTS
+from roguelike.items import ITEM_WEIGHTS
+from roguelike.monsters.monster_tables import get_monster_for_depth
 from roguelike.random_utils import from_dungeon_level, random_choice_from_dict
 from roguelike.render_functions import RenderOrder
 
 from .rectangle import Rect
 from .tile import Tile
 
+SAFE_RADIUS = 6  # prevents monsters from spawning in starting room
+
 # ---------------------------------------------------------------------------
 # HELPER FUNCTION
 # ---------------------------------------------------------------------------
-
-
 def weighted_choice(rng, weighted_list):
     """Return a class chosen from a weighted list of (cls, weight)."""
     total = sum(weight for _, weight in weighted_list)
@@ -112,7 +112,7 @@ class GameMap:
                 prev_x, prev_y = rooms[-1].center()
                 self.connect_rooms(prev_x, prev_y, new_x, new_y)
 
-            self.place_entities(new_room, entities)
+            self.place_entities(new_room, entities, player)
 
             rooms.append(new_room)
             last_center = (new_x, new_y)
@@ -160,38 +160,41 @@ class GameMap:
         for y in range(min(y1, y2), max(y1, y2) + 1):
             self.carve(x, y)
 
+    def distance(self, x1, y1, x2, y2):
+        return max(abs(x1 - x2), abs(y1 - y2))
+
     # ----------------------------------------------------------------------
     # ENTITY PLACEMENT
     # ----------------------------------------------------------------------
-    def place_entities(self, room: Rect, entities: List[Entity]) -> None:
+    def place_entities(self, room: Rect, entities: List[Entity], player: Entity) -> None:
         max_monsters = from_dungeon_level([[2, 1], [3, 4], [5, 6]], self.dungeon_level)
         max_items = from_dungeon_level([[1, 1], [2, 4]], self.dungeon_level)
 
         num_monsters = self.rng.randint(0, max_monsters)
         num_items = self.rng.randint(0, max_items)
 
-        item_chances = {
-            "healing_potion": 35,
-            "sword": from_dungeon_level([[5, 4]], self.dungeon_level),
-            "shield": from_dungeon_level([[15, 8]], self.dungeon_level),
-            "lightning_scroll": from_dungeon_level([[25, 4]], self.dungeon_level),
-            "fireball_scroll": from_dungeon_level([[25, 6]], self.dungeon_level),
-            "confusion_scroll": from_dungeon_level([[10, 2]], self.dungeon_level),
-        }
-
         # Monsters
         for _ in range(num_monsters):
             x, y = self.random_room_position(room)
-            if not self.is_occupied(x, y, entities):
-                monster_cls = weighted_choice(self.rng, MONSTER_WEIGHTS)
-                monster = monster_cls(x, y)
-                entities.append(monster)
+
+            # Skip if tile is occupied
+            if self.is_occupied(x, y, entities):
+                continue
+
+            # Skip if too close to the player
+            if self.distance(x, y, player.x, player.y) < SAFE_RADIUS:
+                continue
+
+            monster_cls = get_monster_for_depth(self.rng, self.dungeon_level)
+            monster = monster_cls(x, y)
+            entities.append(monster)
 
         # Items
         for _ in range(num_items):
             x, y = self.random_room_position(room)
             if not self.is_occupied(x, y, entities):
-                entities.append(self.create_item(x, y, item_chances))
+                item_cls = weighted_choice(self.rng, ITEM_WEIGHTS)
+                entities.append(item_cls(x, y))
 
     def random_room_position(self, room: Rect) -> Tuple[int, int]:
         return (
@@ -201,84 +204,6 @@ class GameMap:
 
     def is_occupied(self, x: int, y: int, entities: List[Entity]) -> bool:
         return any(e.x == x and e.y == y for e in entities)
-
-    # ----------------------------------------------------------------------
-    # ITEM FACTORY
-    # ----------------------------------------------------------------------
-    def create_item(self, x: int, y: int, chances: Dict[str, int]) -> Entity:
-        choice = random_choice_from_dict(chances)
-
-        if choice == "healing_potion":
-            item = Item(use_function=heal, amount=40)
-            return Entity(
-                x,
-                y,
-                "!",
-                Colors.violet,
-                "Healing Potion",
-                render_order=RenderOrder.ITEM,
-                item=item,
-            )
-
-        if choice == "sword":
-            eq = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=3)
-            return Entity(x, y, "/", Colors.sky, "Sword", equippable=eq)
-
-        if choice == "shield":
-            eq = Equippable(EquipmentSlots.OFF_HAND, defense_bonus=1)
-            return Entity(x, y, "[", Colors.dark_orange, "Shield", equippable=eq)
-
-        if choice == "fireball_scroll":
-            item = Item(
-                use_function=cast_fireball,
-                targeting=True,
-                targeting_message=Message(
-                    "Left-click a target tile for the fireball, or right-click to cancel",
-                    Colors.light_cyan,
-                ),
-                damage=25,
-                radius=3,
-            )
-            return Entity(
-                x,
-                y,
-                "#",
-                Colors.red,
-                "Fireball Scroll",
-                render_order=RenderOrder.ITEM,
-                item=item,
-            )
-
-        if choice == "confusion_scroll":
-            item = Item(
-                use_function=cast_confuse,
-                targeting=True,
-                targeting_message=Message(
-                    "Left-click an enemy to confuse it, or right-click to cancel.",
-                    Colors.light_cyan,
-                ),
-            )
-            return Entity(
-                x,
-                y,
-                "#",
-                Colors.light_pink,
-                "Confusion Scroll",
-                render_order=RenderOrder.ITEM,
-                item=item,
-            )
-
-        # Lightning scroll
-        item = Item(use_function=cast_lightning, damage=40, maximum_range=5)
-        return Entity(
-            x,
-            y,
-            "#",
-            Colors.yellow,
-            "Lightning Scroll",
-            render_order=RenderOrder.ITEM,
-            item=item,
-        )
 
     # ----------------------------------------------------------------------
     # BLOCKING / NEXT FLOOR

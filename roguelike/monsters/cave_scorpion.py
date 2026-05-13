@@ -6,6 +6,9 @@ from roguelike.colors import Colors
 from roguelike.render_functions import RenderOrder
 
 class CaveScorpion(Entity):
+    venom = {"chance": 0.35, "turns": 6, "damage": 3}
+    venom_message = "stings you"
+
     def __init__(self, x: int, y: int):
         super().__init__(
             x=x,

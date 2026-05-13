@@ -38,6 +38,7 @@ class Entity:
     level: Optional[Level] = None
     equipment: Optional[Equipment] = None
     equippable: Optional[Equippable] = None
+    is_player: bool = False
 
     # ----------------------------------------------------------------------
     # Initialization
@@ -77,6 +78,10 @@ class Entity:
         if getattr(self, "is_player", False) or self.name == "Player":
             self.render_order = RenderOrder.PLAYER
 
+    @property
+    def is_monster(self) -> bool:
+        return not self.is_player and self.fighter is not None
+    
     # ----------------------------------------------------------------------
     # Movement
     # ----------------------------------------------------------------------

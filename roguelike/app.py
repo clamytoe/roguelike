@@ -353,7 +353,17 @@ def play_game(
 
         if game_state.is_enemy_turn:
             for entity in entities:
+                if entity.fighter:
+                    turn_results = entity.fighter.on_turn(entity)
+                    for result in turn_results:
+                        message = result.get("message")
+                        # dead = result.get("dead")
+
+                        if message:
+                            message_log.add_message(message)
+
                 if entity.ai:
+
                     for result in entity.ai.take_turn(
                         player, fov_map, game_map, entities
                     ):

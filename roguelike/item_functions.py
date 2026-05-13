@@ -10,6 +10,21 @@ from .game_messages import Message
 
 
 # ---------------------------------------------------------------------------
+# CURE POISON
+# ---------------------------------------------------------------------------
+
+def cure_poison(*args, **kwargs):
+    entity = args[0]
+    entity.fighter.poison_turns = 0
+    entity.fighter.poison_damage = 0
+
+    return [{
+        "consumed": True,
+        "message": Message("You feel the poison leave your body.", Colors.green)
+    }]
+
+
+# ---------------------------------------------------------------------------
 # HEALING
 # ---------------------------------------------------------------------------
 

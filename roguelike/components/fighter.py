@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, List, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from roguelike.colors import Colors
 from roguelike.game_messages import Message
@@ -12,11 +12,15 @@ class Fighter:
     """
     Handles combat stats, damage, healing, and attack logic.
     """
+
     hp: int
     defense: int
     power: int
     name: str = ""
     xp: int = 0
+
+    poison_turns: int = 0
+    poison_damage: int = 0
 
     base_max_hp: int = 0
     base_defense: int = 0
@@ -38,22 +42,50 @@ class Fighter:
     # ----------------------------------------------------------------------
     @property
     def max_hp(self) -> int:
-        bonus = self.owner.equipment.max_hp_bonus if self.owner and self.owner.equipment else 0
+        bonus = (
+            self.owner.equipment.max_hp_bonus
+            if self.owner and self.owner.equipment
+            else 0
+        )
         return self.base_max_hp + bonus
 
     @property
     def power_level(self) -> int:
-        bonus = self.owner.equipment.power_bonus if self.owner and self.owner.equipment else 0
+        bonus = (
+            self.owner.equipment.power_bonus
+            if self.owner and self.owner.equipment
+            else 0
+        )
         return self.base_power + bonus
 
     @property
     def defense_level(self) -> int:
-        bonus = self.owner.equipment.defense_bonus if self.owner and self.owner.equipment else 0
+        bonus = (
+            self.owner.equipment.defense_bonus
+            if self.owner and self.owner.equipment
+            else 0
+        )
         return self.base_defense + bonus
 
     # ----------------------------------------------------------------------
     # Combat
     # ----------------------------------------------------------------------
+    def on_turn(self, owner):
+        results = []
+
+        if self.poison_turns > 0:
+            self.poison_turns -= 1
+            owner.fighter.take_damage(self.poison_damage)
+            results.append({
+                "message": Message(f"{owner.name} suffers poison damage!", Colors.violet)
+            })
+
+        return results
+
+    def apply_poison(self, turns: int, damage: int):
+        self.poison_turns = turns
+        self.poison_damage = damage
+
     def take_damage(self, amount: int) -> List[Dict[str, Any]]:
         """
         Apply damage and return results (death, XP, etc.).
@@ -84,25 +116,27 @@ class Fighter:
         # Determine color based on attacker/defender roles
         if getattr(self.owner, "is_player", False):
             attack_color = Colors.light_green
+            verb = "hit"
+            msg = f"You {verb} the {target.name} for {damage} damage!"
         elif getattr(target, "is_player", False):
             attack_color = Colors.light_red
+            verb = "hits"
+            msg = f"The {self.owner.name} {verb} you for {damage} damage!"
         else:
             attack_color = Colors.white
+            verb = "hits"
+            msg = f"{self.owner.name} {verb} {target.name} for {damage} damage."
 
         if damage > 0:
-            results.append({
-                "message": Message(
-                    f"{self.owner.name.capitalize()} attacks {target.name} for {damage} hit points.",
-                    attack_color,
-                )
-            })
+            results.append({"message": Message(msg, attack_color)})
             results.extend(target.fighter.take_damage(damage))
         else:
             results.append({
                 "message": Message(
-                    f"{self.owner.name.capitalize()} attacks {target.name} but does no damage.",
+                    f"{self.owner.name} attacks {target.name} but does no damage.",
                     attack_color,
                 )
             })
 
         return results
+

@@ -1,18 +1,19 @@
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 from random import randint
-from typing import Any, List, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from tcod import libtcodpy
 
 from roguelike.colors import Colors
 from roguelike.game_messages import Message
 
-
 # ---------------------------------------------------------------------------
 # BASIC MONSTER AI
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class BasicMonster:
@@ -21,6 +22,7 @@ class BasicMonster:
     - If player is visible: move toward or attack.
     - Otherwise: do nothing.
     """
+
     owner: Optional[Any] = None  # Entity that owns this AI
 
     def take_turn(self, target, fov_map, game_map, entities) -> List[Dict[str, Any]]:
@@ -37,6 +39,20 @@ class BasicMonster:
             elif target.fighter.hp > 0:
                 results.extend(monster.fighter.attack(target))
 
+                # Venum system
+                if hasattr(monster, "venom"):
+                    v = monster.venom
+                    if random.random() < v["chance"]:
+                        target.fighter.apply_poison(v["turns"], v["damage"])
+
+                        msg = getattr(monster, "venom_message", "poisons you!")
+                        results.append({
+                            "message": Message(
+                                f"The {monster.name} {msg}!", 
+                                Colors.violet
+                            )
+                        })
+
         return results
 
 
@@ -44,12 +60,14 @@ class BasicMonster:
 # CONFUSED MONSTER AI
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ConfusedMonster:
     """
     Temporary AI that causes random movement for a number of turns.
     Afterward, the previous AI is restored.
     """
+
     previous_ai: Any
     number_of_turns: int = 10
     owner: Optional[Any] = None  # Entity that owns this AI
@@ -78,11 +96,13 @@ class ConfusedMonster:
         monster.ai = self.previous_ai
         monster.ai.owner = monster
 
-        results.append({
-            "message": Message(
-                f"The {monster.name} is no longer confused!",
-                Colors.red,
-            )
-        })
+        results.append(
+            {
+                "message": Message(
+                    f"The {monster.name} is no longer confused!",
+                    Colors.red,
+                )
+            }
+        )
 
         return results

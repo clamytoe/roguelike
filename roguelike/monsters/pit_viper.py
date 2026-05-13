@@ -6,6 +6,9 @@ from roguelike.colors import Colors
 from roguelike.render_functions import RenderOrder
 
 class PitViper(Entity):
+    venom = {"chance": 0.50, "turns": 4, "damage": 2}
+    venom_message = "bites you"
+
     def __init__(self, x: int, y: int):
         super().__init__(
             x=x,
