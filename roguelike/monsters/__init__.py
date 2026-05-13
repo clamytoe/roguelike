@@ -11,19 +11,28 @@ from .cultist import Cultist
 from .dire_bear import DireBear
 from .floating_eye import FloatingEye
 from .young_dragon import YoungDragon
+from .goblin import Goblin
+from .orc import Orc
+from .troll import Troll
+from .cave_spider import CaveSpider
+
 
 # A simple, flat monster table (equal weight)
-MONSTER_TABLE = [
-    GiantRat,
-    VampireBat,
-    PitViper,
-    Zombie,
-    CaveScorpion,
-    SkeletonArcher,
-    Cultist,
-    DireBear,
-    FloatingEye,
-    YoungDragon,
+MONSTER_WEIGHTS = [
+    (GiantRat, 30),
+    (Goblin, 25),
+    (Orc, 20),
+    (VampireBat, 20),
+    (PitViper, 15),
+    (CaveSpider, 15),
+    (Zombie, 15),
+    (CaveScorpion, 12),
+    (SkeletonArcher, 10),
+    (Cultist, 8),
+    (DireBear, 4),
+    (FloatingEye, 6),
+    (Troll, 3),
+    (YoungDragon, 1),
 ]
 
 # Optional: weighted spawn table (recommended)
